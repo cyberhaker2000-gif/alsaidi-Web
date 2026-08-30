@@ -11,20 +11,22 @@
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; }
     .hidden { display: none !important; }
+    #chat-box::-webkit-scrollbar { width: 4px; }
+    #chat-box::-webkit-scrollbar-thumb { background: #cbd5e1; rounded: 4px; }
   </style>
 </head>
-<body class="p-4">
+<body class="p-2 sm:p-4">
 
-  <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6 mt-6 text-center">
+  <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-6 mt-2">
     
     <!-- الهيدر -->
-    <div class="flex justify-between items-center border-b pb-4 mb-6">
+    <div class="flex justify-between items-center border-b pb-4 mb-4">
       <h1 class="text-xl font-bold text-blue-700">منصة الصعيدي 🎓</h1>
-      <button id="logout-btn" onclick="logout()" class="hidden bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">تسجيل الخروج</button>
+      <button id="logout-btn" onclick="logout()" class="hidden bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition">تسجيل الخروج</button>
     </div>
 
-    <!-- شاشة تسجيل الدخول -->
-    <div id="login-screen" class="py-6">
+    <!-- 1. شاشة تسجيل الدخول -->
+    <div id="login-screen" class="text-center py-6">
       <h2 class="text-2xl font-bold text-gray-800 mb-3">أهلاً بك في منصة الصعيدي!</h2>
       <p class="text-gray-600 mb-6 text-sm">سجل دخولك بحساب Google للمتابعة</p>
       <button onclick="loginWithGoogle()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition w-full">
@@ -32,50 +34,111 @@
       </button>
     </div>
 
-    <!-- شاشة غير المشترك -->
-    <div id="unsubscribed-screen" class="hidden text-center py-4">
-      <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl">
-        <h3 class="text-lg font-bold text-yellow-800 mb-2">الاشتراك الشهري 🌟</h3>
-        <p class="text-2xl font-black text-yellow-900 my-2">10 جنيه مصري / شهرياً</p>
-        <p class="text-sm text-gray-600 mb-4">يرجى التواصل مع أستاذ يوسف لتفعيل حسابك.</p>
-        <a href="https://wa.me/201005094619" target="_blank" class="block w-full bg-green-600 text-white py-2.5 rounded-lg font-bold hover:bg-green-700 text-center">
-          تواصل عبر واتساب للتفعيل (+201005094619)
-        </a>
-      </div>
+    <!-- 2. شاشة إعداد الحساب -->
+    <div id="setup-screen" class="hidden py-4">
+      <h3 class="text-lg font-bold text-gray-800 mb-2 text-center">إكمال البيانات الشخصية 📝</h3>
+      <p class="text-xs text-gray-500 mb-4 text-center">قم باختيار اسم مستخدم خاص بك لإكمال التسجيل</p>
+      
+      <form onsubmit="saveUserProfile(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">اسم المستخدم (Username):</label>
+          <input type="text" id="username-input" oninput="checkUsernameAvailability()" required placeholder="مثال: youssef_200" class="w-full p-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <p id="username-msg" class="text-xs mt-1 font-semibold hidden"></p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">المعرف الخاص بك (ID أوتوماتيكي):</label>
+          <input type="text" id="generated-id" readonly class="w-full p-2.5 border rounded-lg text-sm bg-gray-100 font-mono text-center font-bold text-blue-800">
+        </div>
+
+        <button type="submit" id="save-profile-btn" disabled class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold opacity-50 cursor-not-allowed transition">
+          حفظ البيانات والمتابعة
+        </button>
+      </form>
     </div>
 
-    <!-- لوحة الطالب المشترك -->
-    <div id="student-dashboard" class="hidden space-y-4 text-right">
-      <div class="bg-green-100 text-green-800 p-3 rounded-lg text-sm font-semibold text-center">
-        مرحباً بك! اشتراكك فعال الآن 🌟
+    <!-- 3. شاشة غير المشترك -->
+    <div id="unsubscribed-screen" class="hidden py-2 space-y-4">
+      <div class="bg-red-50 border border-red-200 text-red-800 p-3 rounded-xl flex justify-between items-center text-sm font-bold">
+        <span>حالة الاشتراك:</span>
+        <span class="bg-red-200 text-red-900 px-3 py-1 rounded-full text-xs">غير مفعل ❌</span>
       </div>
+
+      <div class="bg-gray-50 p-3 rounded-xl border text-right text-xs space-y-1">
+        <p><b>اسم المستخدم:</b> <span id="display-username" class="text-blue-700"></span></p>
+        <p><b>الـ ID الخاص بك:</b> <span id="display-id" class="font-mono text-purple-700 font-bold"></span></p>
+      </div>
+
+      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-xl text-right">
+        <h3 class="text-md font-bold text-blue-900 mb-3 text-center border-b border-blue-200 pb-2">⭐ مميزات الاشتراك الشهري (10 ج.م) ⭐</h3>
+        <ul class="text-xs text-gray-700 space-y-2">
+          <li class="flex items-center gap-2"><span class="text-green-600 font-bold">✓</span> المحادثة الجماعية مع الطلاب والأستاذ يوسف.</li>
+          <li class="flex items-center gap-2"><span class="text-green-600 font-bold">✓</span> الوصول الكامل لجميع الاختبارات والأسئلة.</li>
+          <li class="flex items-center gap-2"><span class="text-green-600 font-bold">✓</span> تقييم فوري ومتابعة مستمرة.</li>
+        </ul>
+      </div>
+
+      <a id="whatsapp-link" href="#" target="_blank" class="block w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 text-center shadow-md transition">
+        تواصل عبر واتساب للتفعيل الآن 💬
+      </a>
+    </div>
+
+    <!-- 4. شاشة الطالب المشترك / المحادثة الجماعية -->
+    <div id="student-dashboard" class="hidden space-y-4 text-right">
+      <div class="bg-green-50 border border-green-200 text-green-800 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold">
+        <span>أهلاً <span id="student-name-header"></span></span>
+        <span class="bg-green-200 text-green-900 px-2.5 py-0.5 rounded-full">اشتراك مفعل ✅</span>
+      </div>
+
+      <!-- قسم المحادثة الجماعية -->
+      <div class="border rounded-xl bg-gray-50 p-3 flex flex-col h-80">
+        <h3 class="font-bold text-sm text-gray-800 mb-2 pb-1 border-b flex justify-between items-center">
+          <span>💬 المحادثة الجماعية</span>
+          <span class="text-xs text-blue-600 font-normal">مباشر</span>
+        </h3>
+        
+        <!-- مكان الرسائل -->
+        <div id="chat-box" class="flex-1 overflow-y-auto space-y-2 p-1 text-xs"></div>
+
+        <!-- حقل إرسال الرسالة -->
+        <form onsubmit="sendMessage(event)" class="mt-2 flex gap-1.5">
+          <input type="text" id="chat-input" required placeholder="اكتب استفسارك هنا..." class="flex-1 p-2 border rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-blue-700 transition">إرسال</button>
+        </form>
+      </div>
+
+      <!-- الاختبار -->
       <div class="border p-4 rounded-xl bg-gray-50">
         <h3 class="font-bold text-gray-800 mb-2">الاختبار اليومي:</h3>
         <form onsubmit="submitQuiz(event)" class="space-y-3">
           <div id="quiz-container"></div>
-          <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold">إرسال الإجابة</button>
+          <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">إرسال الإجابة</button>
         </form>
       </div>
     </div>
 
-    <!-- لوحة المالك (Admin) -->
-    <div id="admin-dashboard" class="hidden space-y-6 text-right">
-      <div class="bg-purple-100 text-purple-900 p-3 rounded-lg font-bold text-center">
+    <!-- 5. لوحة تحكم المالك (Admin) مع الشات -->
+    <div id="admin-dashboard" class="hidden space-y-4 text-right">
+      <div class="bg-purple-100 text-purple-900 p-3 rounded-lg font-bold text-center text-sm">
         👑 لوحة تحكم المالك (أستاذ يوسف)
       </div>
 
-      <!-- إضافة سؤال -->
-      <form onsubmit="addQuestion(event)" class="bg-gray-50 p-4 rounded-xl border space-y-3">
-        <h3 class="font-bold text-sm">إضافة سؤال جديد:</h3>
-        <input type="text" id="q-text" required placeholder="اكتب السؤال هنا..." class="w-full p-2 border rounded-lg text-sm">
-        <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-lg font-bold text-sm">إضافة السؤال</button>
-      </form>
-
-      <!-- إجابات الطلاب -->
-      <div class="bg-gray-50 p-4 rounded-xl border">
-        <h3 class="font-bold text-sm mb-3">إجابات الطلاب المسجلة:</h3>
-        <div id="results-list" class="space-y-2 text-sm"></div>
+      <!-- شات المالك -->
+      <div class="border rounded-xl bg-gray-50 p-3 flex flex-col h-72">
+        <h3 class="font-bold text-sm text-purple-900 mb-2 pb-1 border-b">💬 المحادثة الجماعية (الرد على الطلاب)</h3>
+        <div id="admin-chat-box" class="flex-1 overflow-y-auto space-y-2 p-1 text-xs"></div>
+        <form onsubmit="sendAdminMessage(event)" class="mt-2 flex gap-1.5">
+          <input type="text" id="admin-chat-input" required placeholder="رد على الطلاب بصفتك المالك..." class="flex-1 p-2 border rounded-lg text-xs focus:outline-none">
+          <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-xs">إرسال كـ مالك</button>
+        </form>
       </div>
+
+      <!-- تفعيل اشتراك -->
+      <form onsubmit="activateStudent(event)" class="bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-2">
+        <h3 class="font-bold text-xs text-blue-900">تفعيل اشتراك طالب:</h3>
+        <input type="text" id="activate-input" required placeholder="ادخل اسم المستخدم أو الـ ID" class="w-full p-2 border rounded-lg text-xs">
+        <button type="submit" class="w-full bg-green-600 text-white py-1.5 rounded-lg font-bold text-xs">تفعيل الاشتراك</button>
+      </form>
     </div>
 
   </div>
@@ -90,7 +153,6 @@
       appId: "1:850470059128:web:f90842e8eb6dd03dc9018d"
     };
 
-    // بريد المالك الصحيح
     const ADMIN_EMAIL = "youssef57255@gmail.com";
 
     firebase.initializeApp(firebaseConfig);
@@ -98,102 +160,170 @@
     const db = firebase.firestore();
 
     let currentUser = null;
+    let userProfileData = null;
 
-    // استقبال نتيجة التسجيل بعد التوجيه
-    auth.getRedirectResult().then(result => {
-      if (result && result.user) {
-        handleUser(result.user);
-      }
-    }).catch(err => {
-      alert("حدث خطأ أثناء تسجيل الدخول: " + err.message);
-    });
-
-    // متابعة حالة التسجيل
     auth.onAuthStateChanged(user => {
       if (user) {
-        handleUser(user);
+        currentUser = user;
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('logout-btn').classList.remove('hidden');
+
+        if (user.email === ADMIN_EMAIL) {
+          hideAllScreens();
+          document.getElementById('admin-dashboard').classList.remove('hidden');
+          loadChat('admin-chat-box');
+        } else {
+          checkUserProfile(user);
+        }
       } else {
+        hideAllScreens();
         document.getElementById('login-screen').classList.remove('hidden');
         document.getElementById('logout-btn').classList.add('hidden');
-        document.getElementById('unsubscribed-screen').classList.add('hidden');
-        document.getElementById('student-dashboard').classList.add('hidden');
-        document.getElementById('admin-dashboard').classList.add('hidden');
       }
     });
 
-    function handleUser(user) {
-      currentUser = user;
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('logout-btn').classList.remove('hidden');
-
-      if (user.email === ADMIN_EMAIL) {
-        document.getElementById('admin-dashboard').classList.remove('hidden');
-        loadAdminData();
-      } else {
-        checkStudentSubscription(user);
-      }
+    function hideAllScreens() {
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('unsubscribed-screen').classList.add('hidden');
+      document.getElementById('student-dashboard').classList.add('hidden');
+      document.getElementById('admin-dashboard').classList.add('hidden');
     }
 
-    function loginWithGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithRedirect(provider);
-    }
-
-    function logout() {
-      auth.signOut();
-    }
-
-    function checkStudentSubscription(user) {
+    function checkUserProfile(user) {
       db.collection('students').doc(user.uid).get().then(doc => {
-        if (doc.exists && doc.data().isSubscribed) {
-          document.getElementById('student-dashboard').classList.remove('hidden');
-          loadQuiz();
+        if (!doc.exists || !doc.data().username) {
+          hideAllScreens();
+          document.getElementById('setup-screen').classList.remove('hidden');
+          document.getElementById('generated-id').value = Math.floor(100000 + Math.random() * 900000).toString();
         } else {
-          document.getElementById('unsubscribed-screen').classList.remove('hidden');
+          userProfileData = doc.data();
+          if (userProfileData.isSubscribed) {
+            hideAllScreens();
+            document.getElementById('student-dashboard').classList.remove('hidden');
+            document.getElementById('student-name-header').innerText = userProfileData.username;
+            loadChat('chat-box');
+            loadQuiz();
+          } else {
+            hideAllScreens();
+            document.getElementById('unsubscribed-screen').classList.remove('hidden');
+            document.getElementById('display-username').innerText = userProfileData.username;
+            document.getElementById('display-id').innerText = userProfileData.studentId;
+            document.getElementById('whatsapp-link').href = `https://wa.me/201005094619?text=${encodeURIComponent('مرحباً أستاذ يوسف، أريد تفعيل اشتراكي.\nاسم المستخدم: ' + userProfileData.username + '\nالـ ID: ' + userProfileData.studentId)}`;
+          }
         }
       });
     }
 
-    function addQuestion(e) {
+    function checkUsernameAvailability() {
+      const usernameInput = document.getElementById('username-input').value.trim().toLowerCase();
+      const msgElem = document.getElementById('username-msg');
+      const submitBtn = document.getElementById('save-profile-btn');
+
+      if (usernameInput.length < 3) {
+        msgElem.innerText = "3 حروف على الأقل.";
+        msgElem.className = "text-xs mt-1 font-semibold text-red-600";
+        msgElem.classList.remove('hidden');
+        submitBtn.disabled = true;
+        return;
+      }
+
+      db.collection('students').where('username_lowercase', '==', usernameInput).get().then(snapshot => {
+        if (!snapshot.empty) {
+          msgElem.innerText = "اسم المستخدم مستخدم بالفعل ❌";
+          msgElem.className = "text-xs mt-1 font-semibold text-red-600";
+          msgElem.classList.remove('hidden');
+          submitBtn.disabled = true;
+        } else {
+          msgElem.innerText = "اسم المستخدم متاح ✅";
+          msgElem.className = "text-xs mt-1 font-semibold text-green-600";
+          msgElem.classList.remove('hidden');
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    function saveUserProfile(e) {
       e.preventDefault();
-      const text = document.getElementById('q-text').value;
-      db.collection('quizzes').add({ text: text }).then(() => {
-        alert("تمت إضافة السؤال بنجاح!");
-        document.getElementById('q-text').value = '';
-      });
+      const username = document.getElementById('username-input').value.trim();
+      const studentId = document.getElementById('generated-id').value;
+
+      db.collection('students').doc(currentUser.uid).set({
+        username: username,
+        username_lowercase: username.toLowerCase(),
+        studentId: studentId,
+        email: currentUser.email,
+        isSubscribed: false
+      }).then(() => checkUserProfile(currentUser));
     }
 
-    function loadQuiz() {
-      db.collection('quizzes').get().then(snapshot => {
-        const container = document.getElementById('quiz-container');
-        container.innerHTML = '';
-        snapshot.docs.forEach(doc => {
-          container.innerHTML += `<p class="font-bold my-2">${doc.data().text}</p><input type="text" name="ans" required class="w-full p-2 border rounded">`;
-        });
-      });
-    }
-
-    function submitQuiz(e) {
+    // إدارة الشات الجماعي
+    function sendMessage(e) {
       e.preventDefault();
-      const ans = e.target.ans.value;
-      db.collection('results').add({
-        studentName: currentUser.displayName,
-        studentEmail: currentUser.email,
-        answer: ans
-      }).then(() => alert("تم إرسال إجابتك!"));
+      const input = document.getElementById('chat-input');
+      if (!input.value.trim()) return;
+
+      db.collection('messages').add({
+        sender: userProfileData.username,
+        role: 'student',
+        text: input.value.trim(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => input.value = '');
     }
 
-    function loadAdminData() {
-      db.collection('results').onSnapshot(snapshot => {
-        const list = document.getElementById('results-list');
-        list.innerHTML = '';
+    function sendAdminMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('admin-chat-input');
+      if (!input.value.trim()) return;
+
+      db.collection('messages').add({
+        sender: 'أستاذ يوسف (المالك) 👑',
+        role: 'admin',
+        text: input.value.trim(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => input.value = '');
+    }
+
+    function loadChat(boxId) {
+      db.collection('messages').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
+        const box = document.getElementById(boxId);
+        box.innerHTML = '';
         snapshot.docs.forEach(doc => {
-          const d = doc.data();
-          list.innerHTML += `<div class="p-2 bg-white rounded border"><b>${d.studentName}:</b> ${d.answer}</div>`;
+          const m = doc.data();
+          const isAdmin = m.role === 'admin';
+          box.innerHTML += `
+            <div class="p-2 rounded-lg border ${isAdmin ? 'bg-purple-50 border-purple-200' : 'bg-white border-gray-200'}">
+              <span class="font-bold ${isAdmin ? 'text-purple-800' : 'text-blue-700'}">${m.sender}:</span>
+              <p class="text-gray-800 mt-0.5">${m.text}</p>
+            </div>
+          `;
         });
+        box.scrollTop = box.scrollHeight;
       });
     }
+
+    function activateStudent(e) {
+      e.preventDefault();
+      const val = document.getElementById('activate-input').value.trim();
+      db.collection('students').where('studentId', '==', val).get().then(snap => {
+        if (!snap.empty) activateDoc(snap.docs[0]);
+        else {
+          db.collection('students').where('username_lowercase', '==', val.toLowerCase()).get().then(snap2 => {
+            if (!snap2.empty) activateDoc(snap2.docs[0]);
+            else alert("لم يتم العثور على طالب!");
+          });
+        }
+      });
+    }
+
+    function activateDoc(docRef) {
+      db.collection('students').doc(docRef.id).update({ isSubscribed: true }).then(() => {
+        alert("تم التفعيل بنجاح!");
+        document.getElementById('activate-input').value = '';
+      });
+    }
+
+    function loginWithGoogle() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); }
+    function logout() { auth.signOut(); }
   </script>
 </body>
 </html>
-
