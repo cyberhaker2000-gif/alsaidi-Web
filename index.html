@@ -152,6 +152,22 @@
       background: var(--input-bg); border-right: 3px solid var(--accent-yellow);
       padding: 10px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;
     }
+
+    /* منطقة السحب والإفلات الجديدة */
+    .drop-zone {
+      border: 2px dashed var(--accent-yellow);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      background: var(--input-bg);
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background 0.3s;
+    }
+    .drop-zone.dragover {
+      background: rgba(255, 204, 0, 0.15);
+      border-color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -244,11 +260,20 @@
 
       <hr style="border-color: var(--border-color); margin: 20px 0;">
 
-      <!-- رفع المحتوى -->
-      <h3>📁 رفع درس جديد:</h3>
+      <!-- رفع المحتوى بالسحب والإفلات -->
+      <h3>📁 رفع درس جديد (سحب وإفلات الفيديوهات، الصور، والـ PDF):</h3>
       <select id="uploadCategorySelect" class="input-field"></select>
       <input type="text" id="lessonTitle" class="input-field" placeholder="عنوان الدرس...">
-      <input type="url" id="lessonUrl" class="input-field" placeholder="رابط الفيديو / الصورة / المستند...">
+      
+      <!-- منطقة السحب والإفلات -->
+      <div id="dropZone" class="drop-zone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        📂 اسحب وأفلت الفيديو أو الصورة أو ملف الـ PDF هنا <br>
+        <span style="font-size: 12px; color: var(--accent-yellow);">أو انقر لاختيار ملف من جهازك</span>
+        <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
+      </div>
+
+      <input type="url" id="lessonUrl" class="input-field" placeholder="أو اكتب رابط الملف/الفيديو مباشرة هنا...">
+      
       <select id="lessonType" class="input-field">
         <option value="video">فيديو (مخفي الرابط)</option>
         <option value="image">صورة</option>
@@ -299,7 +324,6 @@
   </div>
 
   <script>
-    // 👑 بيانات حساب المالك الجديدة
     const ADMIN_USERNAME = "alsaidi plus";
 
     let state = JSON.parse(localStorage.getItem('alsaidi_platform_db')) || {
@@ -310,7 +334,7 @@
       students: {
         "alsaidi plus": { username: "alsaidi plus", pass: "57255", phone: "+201005094619", id: "ID-9999", daysLeft: 999, active: true }
       },
-      loginLogs: [] // سجل التسجيلات الجديدة
+      loginLogs: []
     };
 
     let currentUser = JSON.parse(localStorage.getItem('alsaidi_current_user')) || null;
@@ -322,6 +346,55 @@
       renderApp();
     }
 
+    // --- السحب والإفلات للملفات ---
+    document.getElementById('dropZone').addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.add('dragover');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        processFile(e.dataTransfer.files[0]);
+      }
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        processFile(e.target.files[0]);
+      }
+    }
+
+    function processFile(file) {
+      const reader = new FileReader();
+      const lessonTypeSelect = document.getElementById('lessonType');
+      
+      // تحديد نوع الملف تلقائياً
+      if (file.type.startsWith('video/')) {
+        lessonTypeSelect.value = 'video';
+      } else if (file.type.startsWith('image/')) {
+        lessonTypeSelect.value = 'image';
+      } else {
+        lessonTypeSelect.value = 'file';
+      }
+
+      reader.onload = function(event) {
+        document.getElementById('lessonUrl').value = event.target.result;
+        alert(`تم إفلات الملف (${file.name}) وتحويله بنجاح!`);
+      };
+      reader.readAsDataURL(file);
+    }
+
     // --- تحكم بالنافذة المنبثقة للتسجيل ---
     function openAuthModal() {
       document.getElementById('authModal').classList.remove('hidden');
@@ -331,7 +404,6 @@
       document.getElementById('authModal').classList.add('hidden');
     }
 
-    // --- التحقق التلقائي المباشر من اسم المستخدم ---
     function checkUsernameAvailability() {
       const usernameInput = document.getElementById('regUsername').value.trim().toLowerCase();
       const statusMsg = document.getElementById('usernameStatusMsg');
@@ -352,7 +424,6 @@
       }
     }
 
-    // --- تنفيذ التسجيل أو الدخول ---
     function submitAuth() {
       const username = document.getElementById('regUsername').value.trim().toLowerCase();
       const pass = document.getElementById('regPassword').value.trim();
@@ -363,7 +434,6 @@
         return;
       }
 
-      // تسجيل دخول لحساب موجود بالفعل
       if (state.students[username]) {
         if (state.students[username].pass === pass) {
           currentUser = state.students[username];
@@ -376,7 +446,6 @@
         return;
       }
 
-      // إنشاء حساب جديد للطلاب
       const newStudent = {
         username: username,
         pass: pass,
@@ -389,7 +458,6 @@
       state.students[username] = newStudent;
       currentUser = newStudent;
 
-      // إضافة إشعار في لوحة تحكم المالك
       const timeString = new Date().toLocaleString('ar-EG');
       state.loginLogs.unshift({
         user: username,
@@ -409,7 +477,6 @@
       alert('تم تسجيل الخروج.');
     }
 
-    // --- العرض والتحكم ---
     function renderApp() {
       const navUserDisplay = document.getElementById('navUserDisplay');
       const loginBtn = document.getElementById('loginBtn');
@@ -458,7 +525,6 @@
       renderChat();
     }
 
-    // عرض سجل التسجيلات للمالك
     function renderAdminLogs() {
       const container = document.getElementById('adminLoginLogs');
       container.innerHTML = '';
@@ -532,12 +598,13 @@
       const type = document.getElementById('lessonType').value;
       const category = document.getElementById('uploadCategorySelect').value;
 
-      if (!title || !url) return alert('يرجى ملء البيانات');
+      if (!title || !url) return alert('يرجى ملء البيانات أو إفلات ملف أولاً');
 
       state.lessons.push({ title, url, type, category });
       document.getElementById('lessonTitle').value = '';
       document.getElementById('lessonUrl').value = '';
       saveData();
+      alert('تم نشر الدرس بنجاح! 🚀');
     }
 
     function renderLessons() {
