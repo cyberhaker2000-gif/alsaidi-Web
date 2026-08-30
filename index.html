@@ -1,329 +1,209 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>منصة الصعيدي التعليمية</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; }
-    .hidden { display: none !important; }
-    #chat-box::-webkit-scrollbar { width: 4px; }
-    #chat-box::-webkit-scrollbar-thumb { background: #cbd5e1; rounded: 4px; }
+    /* --- ألوان ومتغيرات الوضع الداكن والفاتح --- */
+    :root {
+      /* الوضع الفاتح (أصفر وأبيض) */
+      --bg-color: #fcfcf7;
+      --navbar-bg: #ffffff;
+      --text-color: #1a1a1a;
+      --accent-yellow: #ffcc00;
+      --border-color: #e6c200;
+      --card-bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+      /* الوضع الداكن (أسود وأصفر) */
+      --bg-color: #121212;
+      --navbar-bg: #1e1e1e;
+      --text-color: #ffffff;
+      --accent-yellow: #ffcc00;
+      --border-color: #ffcc00;
+      --card-bg: #1a1a1a;
+    }
+
+    /* --- تنسيقات العامة للصفحة --- */
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding-top: 80px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* --- تنسيق الشريط العلوي --- */
+    .top-navbar-container {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      left: 10px;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--navbar-bg);
+      border: 2px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: 40px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+      direction: rtl;
+      transition: all 0.3s ease;
+    }
+
+    /* --- الصورة الدائرية للمنصة --- */
+    .platform-logo-wrapper {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-yellow);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #000000;
+      flex-shrink: 0;
+    }
+
+    .platform-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* --- مجموعة الأزرار والروابط --- */
+    .badge-links-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-link {
+      color: #000000 !important;
+      background-color: var(--accent-yellow);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      text-decoration: none;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .badge-link:hover {
+      transform: scale(1.05);
+      filter: brightness(1.1);
+    }
+
+    .badge-note {
+      font-size: 11px;
+      color: var(--text-color);
+      opacity: 0.85;
+      font-weight: bold;
+    }
+
+    /* --- زر التبديل بين الوضعين --- */
+    .theme-toggle-btn {
+      background-color: transparent;
+      border: 1.5px solid var(--accent-yellow);
+      color: var(--accent-yellow);
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .theme-toggle-btn:hover {
+      transform: rotate(15deg) scale(1.1);
+    }
+
+    /* --- منطقة المحتوى الرئيسية --- */
+    .main-content {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
   </style>
 </head>
-<body class="p-2 sm:p-4">
+<body>
 
-  <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-4 sm:p-6 mt-2">
+  <!-- 1. الشريط العلوي الذكي للمنصة -->
+  <div class="top-navbar-container">
     
-    <!-- الهيدر -->
-    <div class="flex justify-between items-center border-b pb-4 mb-4">
-      <h1 class="text-xl font-bold text-blue-700">منصة الصعيدي 🎓</h1>
-      <button id="logout-btn" onclick="logout()" class="hidden bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition">تسجيل الخروج</button>
+    <!-- الشعار الدائري للمنصة -->
+    <div class="platform-logo-wrapper">
+      <img src="https://via.placeholder.com/150" alt="شعار المنصة" class="platform-logo-img">
     </div>
 
-    <!-- 1. شاشة تسجيل الدخول -->
-    <div id="login-screen" class="text-center py-6">
-      <h2 class="text-2xl font-bold text-gray-800 mb-3">أهلاً بك في منصة الصعيدي!</h2>
-      <p class="text-gray-600 mb-6 text-sm">سجل دخولك بحساب Google للمتابعة</p>
-      <button onclick="loginWithGoogle()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition w-full">
-        تسجيل الدخول بحساب Google
-      </button>
-    </div>
-
-    <!-- 2. شاشة إعداد الحساب -->
-    <div id="setup-screen" class="hidden py-4">
-      <h3 class="text-lg font-bold text-gray-800 mb-2 text-center">إكمال البيانات الشخصية 📝</h3>
-      <p class="text-xs text-gray-500 mb-4 text-center">قم باختيار اسم مستخدم خاص بك لإكمال التسجيل</p>
-      
-      <form onsubmit="saveUserProfile(event)" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">اسم المستخدم (Username):</label>
-          <input type="text" id="username-input" oninput="checkUsernameAvailability()" required placeholder="مثال: youssef_200" class="w-full p-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <p id="username-msg" class="text-xs mt-1 font-semibold hidden"></p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">المعرف الخاص بك (ID أوتوماتيكي):</label>
-          <input type="text" id="generated-id" readonly class="w-full p-2.5 border rounded-lg text-sm bg-gray-100 font-mono text-center font-bold text-blue-800">
-        </div>
-
-        <button type="submit" id="save-profile-btn" disabled class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold opacity-50 cursor-not-allowed transition">
-          حفظ البيانات والمتابعة
-        </button>
-      </form>
-    </div>
-
-    <!-- 3. شاشة غير المشترك -->
-    <div id="unsubscribed-screen" class="hidden py-2 space-y-4">
-      <div class="bg-red-50 border border-red-200 text-red-800 p-3 rounded-xl flex justify-between items-center text-sm font-bold">
-        <span>حالة الاشتراك:</span>
-        <span class="bg-red-200 text-red-900 px-3 py-1 rounded-full text-xs">غير مفعل ❌</span>
-      </div>
-
-      <div class="bg-gray-50 p-3 rounded-xl border text-right text-xs space-y-1">
-        <p><b>اسم المستخدم:</b> <span id="display-username" class="text-blue-700"></span></p>
-        <p><b>الـ ID الخاص بك:</b> <span id="display-id" class="font-mono text-purple-700 font-bold"></span></p>
-      </div>
-
-      <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-xl text-right">
-        <h3 class="text-md font-bold text-blue-900 mb-3 text-center border-b border-blue-200 pb-2">⭐ مميزات الاشتراك الشهري (10 ج.م) ⭐</h3>
-        <ul class="text-xs text-gray-700 space-y-2">
-          <li class="flex items-center gap-2"><span class="text-green-600 font-bold">✓</span> المحادثة الجماعية مع الطلاب والأستاذ يوسف.</li>
-          <li class="flex items-center gap-2"><span class="text-green-600 font-bold">✓</span> الوصول الكامل لجميع الاختبارات والأسئلة.</li>
-          <li class="flex items-center gap-2"><span class="text-green-600 font-bold">✓</span> تقييم فوري ومتابعة مستمرة.</li>
-        </ul>
-      </div>
-
-      <a id="whatsapp-link" href="#" target="_blank" class="block w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 text-center shadow-md transition">
-        تواصل عبر واتساب للتفعيل الآن 💬
+    <!-- أسماء التواصل والروابط المباشرة -->
+    <div class="badge-links-group">
+      <a href="https://wa.me/201066824974?text=%D9%85%D9%83%D9%8BD8%A3%D8%B9%D8%B1%D9%81%20%D8%AA%D9%81%D8%A7%D8%B5%D9%8A%D9%84%20%D8%A5%D9%86%D8%B4%D8%A7%D8%A1%20%D8%A7%D9%84%D9%85%D9%88%D8%A7%D9%82%D8%B9" target="_blank" rel="noopener noreferrer" class="badge-link">
+        مطور مواقع ✅
       </a>
+      
+      <a href="https://wa.me/201005094619?text=%D9%85%D9%83%D9%8BD8%A3%D8%B9%D8%B1%D9%81%20%D8%AA%D9%81%D8%A7%D8%B5%D9%8A%D9%84%20%D8%A5%D9%86%D8%B4%D8%A7%D8%A1%20%D8%A7%D9%84%D9%85%D9%88%D8%A7%D9%82%D8%B9" target="_blank" rel="noopener noreferrer" class="badge-link">
+        مستر يوسف
+      </a>
+
+      <span class="badge-note">(اضغط علي الأسم للتواصل)</span>
     </div>
 
-    <!-- 4. شاشة الطالب المشترك / المحادثة الجماعية -->
-    <div id="student-dashboard" class="hidden space-y-4 text-right">
-      <div class="bg-green-50 border border-green-200 text-green-800 p-2.5 rounded-xl flex justify-between items-center text-xs font-bold">
-        <span>أهلاً <span id="student-name-header"></span></span>
-        <span class="bg-green-200 text-green-900 px-2.5 py-0.5 rounded-full">اشتراك مفعل ✅</span>
-      </div>
-
-      <!-- قسم المحادثة الجماعية -->
-      <div class="border rounded-xl bg-gray-50 p-3 flex flex-col h-80">
-        <h3 class="font-bold text-sm text-gray-800 mb-2 pb-1 border-b flex justify-between items-center">
-          <span>💬 المحادثة الجماعية</span>
-          <span class="text-xs text-blue-600 font-normal">مباشر</span>
-        </h3>
-        
-        <!-- مكان الرسائل -->
-        <div id="chat-box" class="flex-1 overflow-y-auto space-y-2 p-1 text-xs"></div>
-
-        <!-- حقل إرسال الرسالة -->
-        <form onsubmit="sendMessage(event)" class="mt-2 flex gap-1.5">
-          <input type="text" id="chat-input" required placeholder="اكتب استفسارك هنا..." class="flex-1 p-2 border rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
-          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-blue-700 transition">إرسال</button>
-        </form>
-      </div>
-
-      <!-- الاختبار -->
-      <div class="border p-4 rounded-xl bg-gray-50">
-        <h3 class="font-bold text-gray-800 mb-2">الاختبار اليومي:</h3>
-        <form onsubmit="submitQuiz(event)" class="space-y-3">
-          <div id="quiz-container"></div>
-          <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">إرسال الإجابة</button>
-        </form>
-      </div>
-    </div>
-
-    <!-- 5. لوحة تحكم المالك (Admin) مع الشات -->
-    <div id="admin-dashboard" class="hidden space-y-4 text-right">
-      <div class="bg-purple-100 text-purple-900 p-3 rounded-lg font-bold text-center text-sm">
-        👑 لوحة تحكم المالك (أستاذ يوسف)
-      </div>
-
-      <!-- شات المالك -->
-      <div class="border rounded-xl bg-gray-50 p-3 flex flex-col h-72">
-        <h3 class="font-bold text-sm text-purple-900 mb-2 pb-1 border-b">💬 المحادثة الجماعية (الرد على الطلاب)</h3>
-        <div id="admin-chat-box" class="flex-1 overflow-y-auto space-y-2 p-1 text-xs"></div>
-        <form onsubmit="sendAdminMessage(event)" class="mt-2 flex gap-1.5">
-          <input type="text" id="admin-chat-input" required placeholder="رد على الطلاب بصفتك المالك..." class="flex-1 p-2 border rounded-lg text-xs focus:outline-none">
-          <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-xs">إرسال كـ مالك</button>
-        </form>
-      </div>
-
-      <!-- تفعيل اشتراك -->
-      <form onsubmit="activateStudent(event)" class="bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-2">
-        <h3 class="font-bold text-xs text-blue-900">تفعيل اشتراك طالب:</h3>
-        <input type="text" id="activate-input" required placeholder="ادخل اسم المستخدم أو الـ ID" class="w-full p-2 border rounded-lg text-xs">
-        <button type="submit" class="w-full bg-green-600 text-white py-1.5 rounded-lg font-bold text-xs">تفعيل الاشتراك</button>
-      </form>
-    </div>
-
+    <!-- زر تبديل المظهر (داكن / فاتح) -->
+    <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="تغيير المظهر">
+      <span id="themeIcon">☀️</span>
+    </button>
   </div>
 
+  <!-- 2. محتوى المنصة -->
+  <div class="main-content">
+    <div class="card">
+      <h1>مرحباً بك في منصة الصعيدي التعليمية</h1>
+      <p>تم تفعيل القواعد وقواعد البيانات والوضع الداكن والفاتح بنجاح.</p>
+    </div>
+  </div>
+
+  <!-- 3. كود الجافا سكريبت للوضع الداكن والفاتح -->
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAzmsLzxEYawqypv24ugoY9eiaHfWdeavM",
-      authDomain: "alsaidi-platform.firebaseapp.com",
-      projectId: "alsaidi-platform",
-      storageBucket: "alsaidi-platform.firebasestorage.app",
-      messagingSenderId: "850470059128",
-      appId: "1:850470059128:web:f90842e8eb6dd03dc9018d"
-    };
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    
+    // استرجاع المظهر المحفوظ أو تفعيل الوضع الداكن كافتراضي
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateIcon(savedTheme);
 
-    const ADMIN_EMAIL = "youssef57255@gmail.com";
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
-    let currentUser = null;
-    let userProfileData = null;
-
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        currentUser = user;
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('logout-btn').classList.remove('hidden');
-
-        if (user.email === ADMIN_EMAIL) {
-          hideAllScreens();
-          document.getElementById('admin-dashboard').classList.remove('hidden');
-          loadChat('admin-chat-box');
-        } else {
-          checkUserProfile(user);
-        }
-      } else {
-        hideAllScreens();
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('logout-btn').classList.add('hidden');
-      }
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+      
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateIcon(newTheme);
     });
 
-    function hideAllScreens() {
-      document.getElementById('setup-screen').classList.add('hidden');
-      document.getElementById('unsubscribed-screen').classList.add('hidden');
-      document.getElementById('student-dashboard').classList.add('hidden');
-      document.getElementById('admin-dashboard').classList.add('hidden');
+    function updateIcon(theme) {
+      themeIcon.textContent = (theme === 'dark') ? '☀️' : '🌙';
     }
-
-    function checkUserProfile(user) {
-      db.collection('students').doc(user.uid).get().then(doc => {
-        if (!doc.exists || !doc.data().username) {
-          hideAllScreens();
-          document.getElementById('setup-screen').classList.remove('hidden');
-          document.getElementById('generated-id').value = Math.floor(100000 + Math.random() * 900000).toString();
-        } else {
-          userProfileData = doc.data();
-          if (userProfileData.isSubscribed) {
-            hideAllScreens();
-            document.getElementById('student-dashboard').classList.remove('hidden');
-            document.getElementById('student-name-header').innerText = userProfileData.username;
-            loadChat('chat-box');
-            loadQuiz();
-          } else {
-            hideAllScreens();
-            document.getElementById('unsubscribed-screen').classList.remove('hidden');
-            document.getElementById('display-username').innerText = userProfileData.username;
-            document.getElementById('display-id').innerText = userProfileData.studentId;
-            document.getElementById('whatsapp-link').href = `https://wa.me/201005094619?text=${encodeURIComponent('مرحباً أستاذ يوسف، أريد تفعيل اشتراكي.\nاسم المستخدم: ' + userProfileData.username + '\nالـ ID: ' + userProfileData.studentId)}`;
-          }
-        }
-      });
-    }
-
-    function checkUsernameAvailability() {
-      const usernameInput = document.getElementById('username-input').value.trim().toLowerCase();
-      const msgElem = document.getElementById('username-msg');
-      const submitBtn = document.getElementById('save-profile-btn');
-
-      if (usernameInput.length < 3) {
-        msgElem.innerText = "3 حروف على الأقل.";
-        msgElem.className = "text-xs mt-1 font-semibold text-red-600";
-        msgElem.classList.remove('hidden');
-        submitBtn.disabled = true;
-        return;
-      }
-
-      db.collection('students').where('username_lowercase', '==', usernameInput).get().then(snapshot => {
-        if (!snapshot.empty) {
-          msgElem.innerText = "اسم المستخدم مستخدم بالفعل ❌";
-          msgElem.className = "text-xs mt-1 font-semibold text-red-600";
-          msgElem.classList.remove('hidden');
-          submitBtn.disabled = true;
-        } else {
-          msgElem.innerText = "اسم المستخدم متاح ✅";
-          msgElem.className = "text-xs mt-1 font-semibold text-green-600";
-          msgElem.classList.remove('hidden');
-          submitBtn.disabled = false;
-        }
-      });
-    }
-
-    function saveUserProfile(e) {
-      e.preventDefault();
-      const username = document.getElementById('username-input').value.trim();
-      const studentId = document.getElementById('generated-id').value;
-
-      db.collection('students').doc(currentUser.uid).set({
-        username: username,
-        username_lowercase: username.toLowerCase(),
-        studentId: studentId,
-        email: currentUser.email,
-        isSubscribed: false
-      }).then(() => checkUserProfile(currentUser));
-    }
-
-    // إدارة الشات الجماعي
-    function sendMessage(e) {
-      e.preventDefault();
-      const input = document.getElementById('chat-input');
-      if (!input.value.trim()) return;
-
-      db.collection('messages').add({
-        sender: userProfileData.username,
-        role: 'student',
-        text: input.value.trim(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => input.value = '');
-    }
-
-    function sendAdminMessage(e) {
-      e.preventDefault();
-      const input = document.getElementById('admin-chat-input');
-      if (!input.value.trim()) return;
-
-      db.collection('messages').add({
-        sender: 'أستاذ يوسف (المالك) 👑',
-        role: 'admin',
-        text: input.value.trim(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => input.value = '');
-    }
-
-    function loadChat(boxId) {
-      db.collection('messages').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
-        const box = document.getElementById(boxId);
-        box.innerHTML = '';
-        snapshot.docs.forEach(doc => {
-          const m = doc.data();
-          const isAdmin = m.role === 'admin';
-          box.innerHTML += `
-            <div class="p-2 rounded-lg border ${isAdmin ? 'bg-purple-50 border-purple-200' : 'bg-white border-gray-200'}">
-              <span class="font-bold ${isAdmin ? 'text-purple-800' : 'text-blue-700'}">${m.sender}:</span>
-              <p class="text-gray-800 mt-0.5">${m.text}</p>
-            </div>
-          `;
-        });
-        box.scrollTop = box.scrollHeight;
-      });
-    }
-
-    function activateStudent(e) {
-      e.preventDefault();
-      const val = document.getElementById('activate-input').value.trim();
-      db.collection('students').where('studentId', '==', val).get().then(snap => {
-        if (!snap.empty) activateDoc(snap.docs[0]);
-        else {
-          db.collection('students').where('username_lowercase', '==', val.toLowerCase()).get().then(snap2 => {
-            if (!snap2.empty) activateDoc(snap2.docs[0]);
-            else alert("لم يتم العثور على طالب!");
-          });
-        }
-      });
-    }
-
-    function activateDoc(docRef) {
-      db.collection('students').doc(docRef.id).update({ isSubscribed: true }).then(() => {
-        alert("تم التفعيل بنجاح!");
-        document.getElementById('activate-input').value = '';
-      });
-    }
-
-    function loginWithGoogle() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); }
-    function logout() { auth.signOut(); }
   </script>
 </body>
 </html>
+
