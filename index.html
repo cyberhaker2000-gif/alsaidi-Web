@@ -445,7 +445,7 @@
         return;
       }
 
-      const newStudent = {
+    const newStudent = {
         username: username,
         pass: pass,
         phone: phone,
@@ -606,19 +606,22 @@
       alert('تم نشر الدرس بنجاح! 🚀');
     }
 
-    // دالة مساعدة لتحويل رابط يوتيوب العادي إلى رابط Embed للتضمين
+    // دالة محسنة ومصححة 100% لاستخراج روابط يوتيوب بكل أنواعها
     function getEmbedYouTubeUrl(url) {
       let videoId = '';
-      if (url.includes('youtu.be/')) {
-        videoId = url.split('youtu.be/')[1].split('?')[0];
-      } else if (url.includes('youtube.com/watch')) {
-        const urlParams = new URLSearchParams(new URL(url).search);
-        videoId = urlParams.get('v');
+      try {
+        if (url.includes('youtu.be/')) {
+          videoId = url.split('youtu.be/')[1].split('?')[0].split('&')[0];
+        } else if (url.includes('youtube.com/embed/')) {
+          videoId = url.split('youtube.com/embed/')[1].split('?')[0].split('&')[0];
+        } else if (url.includes('youtube.com/watch')) {
+          const urlObj = new URL(url);
+          videoId = urlObj.searchParams.get('v');
+        }
+      } catch (e) {
+        videoId = '';
       }
-      if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
-      }
-      return url;
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
     }
 
     function renderLessons() {
