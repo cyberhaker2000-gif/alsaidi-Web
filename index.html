@@ -1,1 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة الصعيدي التعليمية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="p-4">
+
+  <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl p-6 mt-6 text-center">
+    
+    <!-- الهيدر -->
+    <div class="flex justify-between items-center border-b pb-4 mb-6">
+      <h1 class="text-xl font-bold text-blue-700">منصة الصعيدي 🎓</h1>
+      <button id="logout-btn" onclick="logout()" class="hidden bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold">تسجيل الخروج</button>
+    </div>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="login-screen" class="py-6">
+      <h2 class="text-2xl font-bold text-gray-800 mb-3">أهلاً بك في منصة الصعيدي!</h2>
+      <p class="text-gray-600 mb-6 text-sm">سجل دخولك بحساب Google للمتابعة</p>
+      <button onclick="loginWithGoogle()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition w-full">
+        تسجيل الدخول بحساب Google
+      </button>
+    </div>
+
+    <!-- شاشة غير المشترك -->
+    <div id="unsubscribed-screen" class="hidden text-center py-4">
+      <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl">
+        <h3 class="text-lg font-bold text-yellow-800 mb-2">الاشتراك الشهري 🌟</h3>
+        <p class="text-2xl font-black text-yellow-900 my-2">10 جنيه مصري / شهرياً</p>
+        <p class="text-sm text-gray-600 mb-4">يرجى التواصل مع أستاذ يوسف لتفعيل حسابك.</p>
+        <a href="https://wa.me/201005094619" target="_blank" class="block w-full bg-green-600 text-white py-2.5 rounded-lg font-bold hover:bg-green-700 text-center">
+          تواصل عبر واتساب للتفعيل (+201005094619)
+        </a>
+      </div>
+    </div>
+
+    <!-- لوحة الطالب المشترك -->
+    <div id="student-dashboard" class="hidden space-y-4 text-right">
+      <div class="bg-green-100 text-green-800 p-3 rounded-lg text-sm font-semibold text-center">
+        مرحباً بك! اشتراكك فعال الآن 🌟
+      </div>
+      <div class="border p-4 rounded-xl bg-gray-50">
+        <h3 class="font-bold text-gray-800 mb-2">الاختبار اليومي:</h3>
+        <form onsubmit="submitQuiz(event)" class="space-y-3">
+          <div id="quiz-container"></div>
+          <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold">إرسال الإجابة</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- لوحة المالك (Admin) -->
+    <div id="admin-dashboard" class="hidden space-y-6 text-right">
+      <div class="bg-purple-100 text-purple-900 p-3 rounded-lg font-bold text-center">
+        👑 لوحة تحكم المالك (أستاذ يوسف)
+      </div>
+
+      <!-- إضافة سؤال -->
+      <form onsubmit="addQuestion(event)" class="bg-gray-50 p-4 rounded-xl border space-y-3">
+        <h3 class="font-bold text-sm">إضافة سؤال جديد:</h3>
+        <input type="text" id="q-text" required placeholder="اكتب السؤال هنا..." class="w-full p-2 border rounded-lg text-sm">
+        <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-lg font-bold text-sm">إضافة السؤال</button>
+      </form>
+
+      <!-- إجابات الطلاب -->
+      <div class="bg-gray-50 p-4 rounded-xl border">
+        <h3 class="font-bold text-sm mb-3">إجابات الطلاب المسجلة:</h3>
+        <div id="results-list" class="space-y-2 text-sm"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzmsLzxEYawqypv24ugoY9eiaHfWdeavM",
+      authDomain: "alsaidi-platform.firebaseapp.com",
+      projectId: "alsaidi-platform",
+      storageBucket: "alsaidi-platform.firebasestorage.app",
+      messagingSenderId: "850470059128",
+      appId: "1:850470059128:web:f90842e8eb6dd03dc9018d"
+    };
+
+    // بريد المالك الصحيح
+    const ADMIN_EMAIL = "youssef57255@gmail.com";
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+
+    // استقبال نتيجة التسجيل بعد التوجيه
+    auth.getRedirectResult().then(result => {
+      if (result && result.user) {
+        handleUser(result.user);
+      }
+    }).catch(err => {
+      alert("حدث خطأ أثناء تسجيل الدخول: " + err.message);
+    });
+
+    // متابعة حالة التسجيل
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        handleUser(user);
+      } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('logout-btn').classList.add('hidden');
+        document.getElementById('unsubscribed-screen').classList.add('hidden');
+        document.getElementById('student-dashboard').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.add('hidden');
+      }
+    });
+
+    function handleUser(user) {
+      currentUser = user;
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('logout-btn').classList.remove('hidden');
+
+      if (user.email === ADMIN_EMAIL) {
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        loadAdminData();
+      } else {
+        checkStudentSubscription(user);
+      }
+    }
+
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithRedirect(provider);
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function checkStudentSubscription(user) {
+      db.collection('students').doc(user.uid).get().then(doc => {
+        if (doc.exists && doc.data().isSubscribed) {
+          document.getElementById('student-dashboard').classList.remove('hidden');
+          loadQuiz();
+        } else {
+          document.getElementById('unsubscribed-screen').classList.remove('hidden');
+        }
+      });
+    }
+
+    function addQuestion(e) {
+      e.preventDefault();
+      const text = document.getElementById('q-text').value;
+      db.collection('quizzes').add({ text: text }).then(() => {
+        alert("تمت إضافة السؤال بنجاح!");
+        document.getElementById('q-text').value = '';
+      });
+    }
+
+    function loadQuiz() {
+      db.collection('quizzes').get().then(snapshot => {
+        const container = document.getElementById('quiz-container');
+        container.innerHTML = '';
+        snapshot.docs.forEach(doc => {
+          container.innerHTML += `<p class="font-bold my-2">${doc.data().text}</p><input type="text" name="ans" required class="w-full p-2 border rounded">`;
+        });
+      });
+    }
+
+    function submitQuiz(e) {
+      e.preventDefault();
+      const ans = e.target.ans.value;
+      db.collection('results').add({
+        studentName: currentUser.displayName,
+        studentEmail: currentUser.email,
+        answer: ans
+      }).then(() => alert("تم إرسال إجابتك!"));
+    }
+
+    function loadAdminData() {
+      db.collection('results').onSnapshot(snapshot => {
+        const list = document.getElementById('results-list');
+        list.innerHTML = '';
+        snapshot.docs.forEach(doc => {
+          const d = doc.data();
+          list.innerHTML += `<div class="p-2 bg-white rounded border"><b>${d.studentName}:</b> ${d.answer}</div>`;
+        });
+      });
+    }
+  </script>
+</body>
+</html>
 
