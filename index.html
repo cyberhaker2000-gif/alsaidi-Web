@@ -3,13 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>منصة الصعيدي التعليمية</title>
-  
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
+  <title>منصة الصعيدي التعليمية - الشاملة</title>
   <style>
     :root {
       --bg-color: #121212;
@@ -40,10 +34,11 @@
       color: var(--text-color);
       font-family: system-ui, -apple-system, sans-serif;
       margin: 0;
-      padding-top: 85px;
+      padding-top: 90px;
       padding-bottom: 40px;
     }
 
+    /* الشريط العلوي */
     .top-navbar-container {
       position: fixed;
       top: 10px; right: 10px; left: 10px;
@@ -52,11 +47,18 @@
       background-color: var(--navbar-bg);
       border: 2px solid var(--accent-yellow);
       padding: 6px 14px; border-radius: 40px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
 
     .navbar-right { display: flex; align-items: center; gap: 10px; }
-    .platform-logo-wrapper { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent-yellow); overflow: hidden; }
+    
+    .platform-logo-wrapper {
+      width: 42px; height: 42px;
+      border-radius: 50%; border: 2px solid var(--accent-yellow);
+      overflow: hidden; display: flex; align-items: center; justify-content: center;
+      background-color: #000; flex-shrink: 0;
+    }
+
     .platform-logo-img { width: 100%; height: 100%; object-fit: cover; }
 
     .btn-main {
@@ -64,17 +66,19 @@
       border: none; padding: 8px 16px; border-radius: 20px;
       font-weight: bold; cursor: pointer; transition: transform 0.2s;
     }
-    .btn-main:hover { transform: scale(1.03); }
+    .btn-main:hover { transform: scale(1.04); }
 
     .btn-danger {
       background-color: #ff4d4d; color: #fff;
       border: none; padding: 6px 12px; border-radius: 12px; font-size: 12px; cursor: pointer;
     }
 
-    .main-container { max-width: 950px; margin: 0 auto; padding: 0 15px; }
+    .main-container { max-width: 900px; margin: 0 auto; padding: 0 15px; }
+
     .section-card {
       background-color: var(--card-bg); border: 1px solid var(--border-color);
       border-radius: 16px; padding: 20px; margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     .input-field {
@@ -85,32 +89,59 @@
 
     .hidden { display: none !important; }
 
-    /* صندوق المحادثة الجماعية */
+    /* شاشة ملف المستخدم والأيدي */
+    .user-profile-card {
+      background: var(--badge-bg);
+      border: 1.5px solid var(--accent-yellow);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-info-item { font-size: 14px; font-weight: bold; }
+    .status-badge {
+      padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold;
+    }
+    .status-active { background-color: #25d366; color: #000; }
+    .status-expired { background-color: #ff4d4d; color: #fff; }
+
+    /* صندوق الدردشة */
     .chat-box {
-      height: 200px; overflow-y: auto; border: 1px solid var(--border-color);
+      height: 220px; overflow-y: auto; border: 1px solid var(--border-color);
       border-radius: 8px; padding: 10px; background-color: var(--input-bg); margin-bottom: 10px;
     }
     .chat-msg { margin-bottom: 8px; padding: 6px 10px; border-radius: 8px; background: rgba(255,204,0,0.1); }
     .chat-msg strong { color: var(--accent-yellow); }
 
-    .sections-bar { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; }
+    /* تبويبات الأقسام */
+    .sections-bar { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
     .category-tab {
       background: var(--input-bg); border: 1px solid var(--border-color);
-      color: var(--text-color); padding: 6px 14px; border-radius: 15px; cursor: pointer;
+      color: var(--text-color); padding: 8px 16px; border-radius: 20px; cursor: pointer; white-space: nowrap;
     }
     .category-tab.active { background: var(--accent-yellow); color: #000; font-weight: bold; }
 
-    /* كروت الاختبارات */
-    .quiz-card {
-      border: 1px solid var(--accent-yellow);
-      padding: 15px; border-radius: 12px; margin-bottom: 15px; background-color: var(--input-bg);
+    /* كروت الاختبارات والدروس */
+    .quiz-card, .lesson-card {
+      border: 1px solid var(--border-color); padding: 15px;
+      border-radius: 12px; margin-bottom: 12px; background-color: var(--input-bg);
     }
     .option-btn {
       display: block; width: 100%; text-align: right; margin: 6px 0;
-      padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color);
+      padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);
       background: var(--card-bg); color: var(--text-color); cursor: pointer;
     }
     .option-btn:hover { border-color: var(--accent-yellow); }
+
+    .locked-msg {
+      text-align: center; color: #ff4d4d; font-weight: bold; padding: 20px;
+      border: 1px dashed #ff4d4d; border-radius: 12px; background: rgba(255, 77, 77, 0.05);
+    }
   </style>
 </head>
 <body>
@@ -119,60 +150,82 @@
   <div class="top-navbar-container">
     <div class="navbar-right">
       <div class="platform-logo-wrapper">
-        <img src="https://i.ibb.co/3ykXj1Z/alsaidi-logo.jpg" class="platform-logo-img" alt="Logo">
+        <img src="https://i.ibb.co/3ykXj1Z/alsaidi-logo.jpg" alt="منصة الصعيدي" class="platform-logo-img">
       </div>
-      <span id="userInfo">غير مسجل دخول</span>
+      <span id="navUserDisplay" style="font-size: 13px; font-weight: bold;">غير مسجل دخول</span>
     </div>
-    <div>
-      <button id="authBtn" class="btn-main" onclick="toggleAuth()">تسجيل الدخول بجيميل 🚀</button>
-      <button class="btn-main" onclick="toggleTheme()">☀️/🌙</button>
+    <div style="display: flex; gap: 8px;">
+      <button id="authBtn" class="btn-main" onclick="handleAuthClick()">تسجيل الدخول بجيميل 🚀</button>
+      <button class="btn-main" style="padding: 8px 12px;" onclick="toggleTheme()">☀️/🌙</button>
     </div>
   </div>
 
   <div class="main-container">
 
-    <!-- 👑 لوحة تحكم المالك فقط (youssef57255@gmail.com) -->
-    <div id="adminPanel" class="section-card hidden">
-      <h2 style="color: var(--accent-yellow);">👑 لوحة تحكم المالك (مستر يوسف)</h2>
+    <!-- 👤 شاشة بيانات المستخدم / الأيدي / حالة الاشتراك -->
+    <div id="userProfileCard" class="user-profile-card hidden">
+      <div class="user-info-item">👤 المستخدم: <span id="profileUser">---</span></div>
+      <div class="user-info-item">🆔 ID الطالب: <span id="profileID" style="color: var(--accent-yellow);">---</span></div>
+      <div class="user-info-item">📅 أيام الاشتراك: <span id="profileDays">0</span> يوم</div>
+      <div>حالة الاشتراك: <span id="profileStatusBadge" class="status-badge status-expired">غير نشط</span></div>
+    </div>
 
-      <!-- 1. إضافة الأعضاء -->
-      <h3>👥 إضافة عضو/مشترك جديد:</h3>
-      <div style="display: flex; gap: 10px;">
-        <input type="email" id="newStudentEmail" class="input-field" placeholder="بريد الطالب (Gmail)...">
-        <input type="number" id="newStudentDays" class="input-field" placeholder="عدد الأيام..." style="width: 120px;">
-        <button class="btn-main" onclick="addStudent()">إضافة المشترك</button>
+    <!-- 👑 لوحة تحكم المالك (تظهر فقط لـ youssef57255@gmail.com) -->
+    <div id="adminPanel" class="section-card hidden">
+      <h2 style="color: var(--accent-yellow); margin-top:0;">👑 لوحة تحكم المالك (مستر يوسف)</h2>
+
+      <!-- 1. إدارة الأعضاء -->
+      <h3>👥 إضافة أو تعديل اشتراك طالب:</h3>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="studentInput" class="input-field" placeholder="بريد الطالب الجيميل أو الـ ID..." style="flex: 2;">
+        <input type="number" id="studentDaysInput" class="input-field" placeholder="عدد الأيام..." style="flex: 1;">
+        <button class="btn-main" onclick="addOrUpdateStudent()">تفعيل / تمديد الاشتراك</button>
       </div>
-      <div id="studentsList" style="margin-top: 10px;"></div>
 
       <hr style="border-color: var(--border-color); margin: 20px 0;">
 
-      <!-- 2. إنشاء اختبار جديد -->
-      <h3>📝 إنشاء اختبار جديد للطلاب:</h3>
-      <input type="text" id="quizTitle" class="input-field" placeholder="عنوان الاختبار (مثال: اختبار الفصل الأول في الفيزياء)...">
-      <input type="text" id="quizQuestion" class="input-field" placeholder="السؤال...">
+      <!-- 2. إدارة الأقسام -->
+      <h3>📂 إدارة الأقسام (إنشاء / إزالة):</h3>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="newCatInput" class="input-field" placeholder="اسم القسم الجديد (مثلاً: الفيزياء الحيوية)...">
+        <button class="btn-main" onclick="addNewCategory()">إضافة قسم</button>
+      </div>
+      <div id="adminCategoriesList" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;"></div>
+
+      <hr style="border-color: var(--border-color); margin: 20px 0;">
+
+      <!-- 3. رفع المحتوى -->
+      <h3>📁 رفع درس أو محتوى جديد:</h3>
+      <select id="uploadCategorySelect" class="input-field"></select>
+      <input type="text" id="lessonTitle" class="input-field" placeholder="عنوان الدرس...">
+      <input type="url" id="lessonUrl" class="input-field" placeholder="رابط الفيديو / الصورة / المستند...">
+      <select id="lessonType" class="input-field">
+        <option value="video">فيديو (مخفي الرابط)</option>
+        <option value="image">صورة</option>
+        <option value="file">ملف PDF / مستند</option>
+      </select>
+      <button class="btn-main" onclick="uploadNewLesson()">نشر الدرس 🚀</button>
+
+      <hr style="border-color: var(--border-color); margin: 20px 0;">
+
+      <!-- 4. إنشاء اختبارات -->
+      <h3>📝 إنشاء اختبار جديد:</h3>
+      <input type="text" id="quizTitle" class="input-field" placeholder="عنوان الاختبار...">
+      <input type="text" id="quizQuestion" class="input-field" placeholder="نص السؤال...">
       <input type="text" id="optA" class="input-field" placeholder="الخيار الأول (أ)">
       <input type="text" id="optB" class="input-field" placeholder="الخيار الثاني (ب)">
       <input type="text" id="optC" class="input-field" placeholder="الخيار الثالث (ج)">
       <select id="correctOpt" class="input-field">
-        <option value="A">الخيار الصحيح: (أ)</option>
-        <option value="B">الخيار الصحيح: (ب)</option>
-        <option value="C">الخيار الصحيح: (ج)</option>
+        <option value="A">الإجابة الصحيحة هي (أ)</option>
+        <option value="B">الإجابة الصحيحة هي (ب)</option>
+        <option value="C">الإجابة الصحيحة هي (ج)</option>
       </select>
-      <button class="btn-main" onclick="createQuiz()">نشر الاختبار 📝</button>
-
-      <hr style="border-color: var(--border-color); margin: 20px 0;">
-
-      <!-- 3. إدارة الأقسام والدروس -->
-      <h3>📂 إدارة الأقسام والرفع:</h3>
-      <div style="display: flex; gap: 10px;">
-        <input type="text" id="newCatInput" class="input-field" placeholder="اسم القسم الجديد...">
-        <button class="btn-main" onclick="addCategory()">إضافة قسم</button>
-      </div>
+      <button class="btn-main" onclick="createNewQuiz()">نشر الاختبار 📝</button>
     </div>
 
     <!-- 💬 الدردشة الجماعية -->
     <div class="section-card">
-      <h3 style="color: var(--accent-yellow);">💬 الدردشة الجماعية للمنصة</h3>
+      <h3 style="color: var(--accent-yellow); margin-top:0;">💬 الدردشة الجماعية للمنصة</h3>
       <div class="chat-box" id="chatBox"></div>
       <div style="display: flex; gap: 10px;">
         <input type="text" id="chatInput" class="input-field" placeholder="اكتب رسالتك هنا..." style="margin-bottom:0;">
@@ -180,62 +233,227 @@
       </div>
     </div>
 
-    <!-- 📝 منطقة الاختبارات المتاحة للطلاب -->
+    <!-- 📚 الأقسام والدروس -->
     <div class="section-card">
-      <h2 style="color: var(--accent-yellow);">📝 الاختبارات والتطبيقات</h2>
-      <div id="quizzesArea">
-        <p style="opacity: 0.7;">جاري تحميل الاختبارات المتاحة...</p>
-      </div>
+      <h2 style="color: var(--accent-yellow); margin-top:0;">📚 الأقسام والدروس المتاحة</h2>
+      <div class="sections-bar" id="categoriesBar"></div>
+      <div id="lessonsArea"></div>
+    </div>
+
+    <!-- 📝 الاختبارات والتطبيقات (تظهر فقط بعد تفعيل الاشتراك) -->
+    <div class="section-card">
+      <h2 style="color: var(--accent-yellow); margin-top:0;">📝 الاختبارات والتطبيقات</h2>
+      <div id="quizzesArea"></div>
     </div>
 
   </div>
 
   <script>
-    // --- إعدادات Firebase ---
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-    
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
     const ADMIN_EMAIL = "youssef57255@gmail.com";
-    let currentUser = null;
 
-    function toggleAuth() {
-      if (auth.currentUser) { auth.signOut(); } 
-      else { auth.signInWithPopup(new firebase.GoogleAuthProvider()); }
+    // --- قاعدة البيانات المحلية المدمجة ---
+    let state = JSON.parse(localStorage.getItem('alsaidi_platform_db')) || {
+      categories: ['القسم العام', 'الفيزياء', 'الكيمياء'],
+      lessons: [],
+      quizzes: [],
+      chat: [
+        { sender: 'مستر يوسف', text: 'أهلاً بكم في منصة الصعيدي التعليمية! 🚀' }
+      ],
+      students: {
+        "youssef57255@gmail.com": { email: "youssef57255@gmail.com", id: "ID-9999", daysLeft: 999, active: true }
+      }
+    };
+
+    let currentUser = JSON.parse(localStorage.getItem('alsaidi_current_user')) || null;
+    let activeCategory = state.categories[0] || 'القسم العام';
+
+    function saveData() {
+      localStorage.setItem('alsaidi_platform_db', JSON.stringify(state));
+      localStorage.setItem('alsaidi_current_user', JSON.stringify(currentUser));
+      renderApp();
     }
 
-    auth.onAuthStateChanged(user => {
-      currentUser = user;
-      const userInfo = document.getElementById('userInfo');
+    // --- نظام المصادقة وتسجيل الدخول ---
+    function handleAuthClick() {
+      if (currentUser) {
+        currentUser = null;
+        alert('تم تسجيل الخروج بنجاح.');
+      } else {
+        const email = prompt("أدخل البريد الإلكتروني الخاص بك (Gmail):", "youssef57255@gmail.com");
+        if (!email) return;
+
+        const cleanEmail = email.trim().toLowerCase();
+        let studentData = state.students[cleanEmail];
+
+        if (!studentData) {
+          // إنشاء حساب جديد وتوليد ID فريد
+          const randomID = "ID-" + Math.floor(1000 + Math.random() * 9000);
+          studentData = {
+            email: cleanEmail,
+            id: randomID,
+            daysLeft: (cleanEmail === ADMIN_EMAIL) ? 999 : 0,
+            active: (cleanEmail === ADMIN_EMAIL)
+          };
+          state.students[cleanEmail] = studentData;
+        }
+
+        currentUser = studentData;
+        alert(`تم تسجيل الدخول بنجاح! \n أهلاً بك: ${currentUser.email}`);
+      }
+      saveData();
+    }
+
+    // --- تحديث الواجهة الرئيسية ---
+    function renderApp() {
+      const navUserDisplay = document.getElementById('navUserDisplay');
       const authBtn = document.getElementById('authBtn');
+      const profileCard = document.getElementById('userProfileCard');
       const adminPanel = document.getElementById('adminPanel');
 
-      if (user) {
-        userInfo.innerText = user.displayName || user.email;
+      if (currentUser) {
+        navUserDisplay.innerText = currentUser.email;
         authBtn.innerText = "تسجيل الخروج";
-        if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        profileCard.classList.remove('hidden');
+
+        document.getElementById('profileUser').innerText = currentUser.email;
+        document.getElementById('profileID').innerText = currentUser.id;
+        document.getElementById('profileDays').innerText = currentUser.daysLeft;
+
+        const badge = document.getElementById('profileStatusBadge');
+        if (currentUser.active && currentUser.daysLeft > 0) {
+          badge.innerText = "مشترك نشط ✅";
+          badge.className = "status-badge status-active";
+        } else {
+          badge.innerText = "غير مفعل ❌";
+          badge.className = "status-badge status-expired";
+        }
+
+        // إظهار لوحة التحكم للمالك فقط
+        if (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
           adminPanel.classList.remove('hidden');
+          renderAdminCategories();
         } else {
           adminPanel.classList.add('hidden');
         }
       } else {
-        userInfo.innerText = "غير مسجل دخول";
+        navUserDisplay.innerText = "غير مسجل دخول";
         authBtn.innerText = "تسجيل الدخول بجيميل 🚀";
+        profileCard.classList.add('hidden');
         adminPanel.classList.add('hidden');
       }
-    });
 
-    // --- نظام إنشاء وحل الاختبارات ---
-    function createQuiz() {
+      renderCategories();
+      renderLessons();
+      renderQuizzes();
+      renderChat();
+    }
+
+    // --- إدارة الأقسام والرفع (المالك) ---
+    function addNewCategory() {
+      const cat = document.getElementById('newCatInput').value.trim();
+      if (cat && !state.categories.includes(cat)) {
+        state.categories.push(cat);
+        document.getElementById('newCatInput').value = '';
+        saveData();
+      }
+    }
+
+    function deleteCategory(catName) {
+      if (confirm(`هل أنت تأكد من حذف قسم (${catName})؟`)) {
+        state.categories = state.categories.filter(c => c !== catName);
+        if (activeCategory === catName) activeCategory = state.categories[0] || '';
+        saveData();
+      }
+    }
+
+    function renderAdminCategories() {
+      const list = document.getElementById('adminCategoriesList');
+      list.innerHTML = '';
+      state.categories.forEach(c => {
+        list.innerHTML += `
+          <span style="background:var(--input-bg); padding:4px 10px; border-radius:10px; font-size:12px; border:1px solid var(--border-color);">
+            ${c} <button style="color:red; background:none; border:none; cursor:pointer;" onclick="deleteCategory('${c}')">❌</button>
+          </span>
+        `;
+      });
+    }
+
+    function renderCategories() {
+      const bar = document.getElementById('categoriesBar');
+      const select = document.getElementById('uploadCategorySelect');
+      bar.innerHTML = '';
+      select.innerHTML = '';
+
+      state.categories.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = `category-tab ${c === activeCategory ? 'active' : ''}`;
+        btn.innerText = c;
+        btn.onclick = () => { activeCategory = c; renderApp(); };
+        bar.appendChild(btn);
+
+        const opt = document.createElement('option');
+        opt.value = c; opt.innerText = c;
+        select.appendChild(opt);
+      });
+    }
+
+    function uploadNewLesson() {
+      const title = document.getElementById('lessonTitle').value.trim();
+      const url = document.getElementById('lessonUrl').value.trim();
+      const type = document.getElementById('lessonType').value;
+      const category = document.getElementById('uploadCategorySelect').value;
+
+      if (!title || !url) return alert('يرجى ملء جميع الخانات');
+
+      state.lessons.push({ title, url, type, category });
+      document.getElementById('lessonTitle').value = '';
+      document.getElementById('lessonUrl').value = '';
+      saveData();
+      alert('تم رفع الدرس بنجاح!');
+    }
+
+    function renderLessons() {
+      const area = document.getElementById('lessonsArea');
+      area.innerHTML = '';
+
+      const isSubscribed = currentUser && (currentUser.active && currentUser.daysLeft > 0 || currentUser.email === ADMIN_EMAIL);
+
+      if (!isSubscribed) {
+        area.innerHTML = `<div class="locked-msg">🔒 الدروس والمحتوى متاحان فقط للطلاب المشتركين. يرجى الاشتراك وتفعيل حسابك لتصفح الدروس.</div>`;
+        return;
+      }
+
+      const filtered = state.lessons.filter(l => l.category === activeCategory);
+      if (filtered.length === 0) {
+        area.innerHTML = `<p style="opacity:0.7;">لا توجد دروس حالياً في قسم (${activeCategory}).</p>`;
+        return;
+      }
+
+      filtered.forEach((l, index) => {
+        let content = `<h4>📌 ${l.title}</h4>`;
+        if (l.type === 'video') {
+          content += `<video controls style="width:100%; max-height:350px; border-radius:8px;"><source src="${l.url}"></video>`;
+        } else if (l.type === 'image') {
+          content += `<img src="${l.url}" style="max-width:100%; border-radius:8px;">`;
+        } else {
+          content += `<a href="${l.url}" target="_blank" style="color:var(--accent-yellow); font-weight:bold;">📄 فتح المستند / الملف</a>`;
+        }
+
+        if (currentUser && currentUser.email === ADMIN_EMAIL) {
+          content += `<br><button class="btn-danger" style="margin-top:8px;" onclick="deleteLesson(${index})">حذف الدرس 🗑️</button>`;
+        }
+
+        area.innerHTML += `<div class="lesson-card">${content}</div>`;
+      });
+    }
+
+    function deleteLesson(idx) {
+      state.lessons.splice(idx, 1);
+      saveData();
+    }
+
+    // --- إدارة وحماية الاختبارات بالاشتراك ---
+    function createNewQuiz() {
       const title = document.getElementById('quizTitle').value.trim();
       const question = document.getElementById('quizQuestion').value.trim();
       const a = document.getElementById('optA').value.trim();
@@ -243,82 +461,128 @@
       const c = document.getElementById('optC').value.trim();
       const correct = document.getElementById('correctOpt').value;
 
-      if (!title || !question || !a || !b || !c) return alert('يرجى ملء جميع بيانات الاختبار كاملة');
+      if (!title || !question || !a || !b || !c) return alert('يرجى ملء كافة بيانات الاختبار');
 
-      db.collection('quizzes').add({
-        title, question,
-        options: { A: a, B: b, C: c },
-        correct,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
-        alert('تم نشر الاختبار بنجاح!');
-        document.getElementById('quizTitle').value = '';
-        document.getElementById('quizQuestion').value = '';
-        document.getElementById('optA').value = '';
-        document.getElementById('optB').value = '';
-        document.getElementById('optC').value = '';
-      });
+      state.quizzes.push({ title, question, options: { A: a, B: b, C: c }, correct });
+      document.getElementById('quizTitle').value = '';
+      document.getElementById('quizQuestion').value = '';
+      document.getElementById('optA').value = '';
+      document.getElementById('optB').value = '';
+      document.getElementById('optC').value = '';
+      saveData();
+      alert('تم نشر الاختبار بنجاح!');
     }
 
-    db.collection('quizzes').onSnapshot(snapshot => {
+    function renderQuizzes() {
       const area = document.getElementById('quizzesArea');
       area.innerHTML = '';
 
-      if (snapshot.empty) {
-        area.innerHTML = '<p>لا توجد اختبارات متاحة حالياً.</p>';
+      const isSubscribed = currentUser && (currentUser.active && currentUser.daysLeft > 0 || currentUser.email === ADMIN_EMAIL);
+
+      if (!isSubscribed) {
+        area.innerHTML = `<div class="locked-msg">🔒 الاختبارات والتطبيقات تظهر فقط بعد تفعيل الاشتراك!</div>`;
         return;
       }
 
-      snapshot.forEach(doc => {
-        const q = doc.data();
+      if (state.quizzes.length === 0) {
+        area.innerHTML = `<p style="opacity:0.7;">لا توجد اختبارات متاحة حالياً.</p>`;
+        return;
+      }
+
+      state.quizzes.forEach((q, index) => {
         area.innerHTML += `
           <div class="quiz-card">
-            <h4>📌 ${q.title}</h4>
+            <h4>📝 ${q.title}</h4>
             <p><strong>س: ${q.question}</strong></p>
-            <button class="option-btn" onclick="checkAnswer('${q.correct}', 'A')">أ) ${q.options.A}</button>
-            <button class="option-btn" onclick="checkAnswer('${q.correct}', 'B')">ب) ${q.options.B}</button>
-            <button class="option-btn" onclick="checkAnswer('${q.correct}', 'C')">ج) ${q.options.C}</button>
+            <button class="option-btn" onclick="checkQuizAns('${q.correct}', 'A')">أ) ${q.options.A}</button>
+            <button class="option-btn" onclick="checkQuizAns('${q.correct}', 'B')">ب) ${q.options.B}</button>
+            <button class="option-btn" onclick="checkQuizAns('${q.correct}', 'C')">ج) ${q.options.C}</button>
+            ${currentUser.email === ADMIN_EMAIL ? `<button class="btn-danger" style="margin-top:8px;" onclick="deleteQuiz(${index})">حذف الاختبار 🗑️</button>` : ''}
           </div>
         `;
       });
-    });
+    }
 
-    function checkAnswer(correct, selected) {
+    function checkQuizAns(correct, selected) {
       if (selected === correct) {
-        alert('🎉 إجابة صحيحة! أحسنت.');
+        alert('🎉 إجابة صحيحة وممتازة! أحسنت.');
       } else {
-        alert('❌ إجابة خاطئة، حاول مرة أخرى!');
+        alert('❌ إجابة خاطئة! حاول مرة أخرى.');
       }
+    }
+
+    function deleteQuiz(idx) {
+      state.quizzes.splice(idx, 1);
+      saveData();
+    }
+
+    // --- إعطاء وتمديد الاشتراكات للطلاب (المالك) ---
+    function addOrUpdateStudent() {
+      const input = document.getElementById('studentInput').value.trim().toLowerCase();
+      const days = parseInt(document.getElementById('studentDaysInput').value);
+
+      if (!input || isNaN(days)) return alert('يرجى أدخال الأيميل/الـ ID وعدد الأيام الصحيح');
+
+      let foundEmail = null;
+
+      // البحث عن طريق الأيميل أو الـ ID
+      Object.keys(state.students).forEach(e => {
+        if (e === input || state.students[e].id.toLowerCase() === input) {
+          foundEmail = e;
+        }
+      });
+
+      if (!foundEmail) {
+        foundEmail = input;
+        state.students[foundEmail] = {
+          email: foundEmail,
+          id: "ID-" + Math.floor(1000 + Math.random() * 9000),
+          daysLeft: days,
+          active: days > 0
+        };
+      } else {
+        state.students[foundEmail].daysLeft += days;
+        state.students[foundEmail].active = state.students[foundEmail].daysLeft > 0;
+      }
+
+      // إذا كان هذا هو المستخدم الفعلي المسجل تحديث بياناته فورياً
+      if (currentUser && currentUser.email === foundEmail) {
+        currentUser = state.students[foundEmail];
+      }
+
+      alert(`تم بنجاح تفعيل/تمديد الاشتراك لـ (${foundEmail}) لمصافة: ${days} يوم.`);
+      document.getElementById('studentInput').value = '';
+      document.getElementById('studentDaysInput').value = '';
+      saveData();
     }
 
     // --- الدردشة والمظهر ---
     function sendChatMessage() {
-      const msg = document.getElementById('chatInput').value;
-      if (!msg || !currentUser) return alert('يرجى تسجيل الدخول وإدخال الرسالة');
+      const msg = document.getElementById('chatInput').value.trim();
+      if (!msg) return;
+      const senderName = currentUser ? (currentUser.email === ADMIN_EMAIL ? '👑 مستر يوسف' : currentUser.id) : 'زائر';
 
-      db.collection('chat').add({
-        sender: currentUser.displayName || currentUser.email,
-        text: msg,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      state.chat.push({ sender: senderName, text: msg });
       document.getElementById('chatInput').value = '';
+      saveData();
     }
 
-    db.collection('chat').orderBy('timestamp', 'asc').onSnapshot(snapshot => {
-      const chatBox = document.getElementById('chatBox');
-      chatBox.innerHTML = '';
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        chatBox.innerHTML += `<div class="chat-msg"><strong>${data.sender}:</strong> ${data.text}</div>`;
+    function renderChat() {
+      const box = document.getElementById('chatBox');
+      box.innerHTML = '';
+      state.chat.forEach(c => {
+        box.innerHTML += `<div class="chat-msg"><strong>${c.sender}:</strong> ${c.text}</div>`;
       });
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
+      box.scrollTop = box.scrollHeight;
+    }
 
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');
       document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
     }
+
+    // تشغيل النظام فورياً
+    renderApp();
   </script>
 </body>
 </html>
-
