@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>منصة الصعيدي التعليمية</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs (Compat version for HTML direct script) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -34,6 +34,1375 @@
     </div>
 
     <!-- 2. واجهة الطالب غير المشترك -->
+    <div id="unsubscribed-screen" class="hidden-section text-center py-8">
+      <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl max-w-md mx-auto">
+        <h3 class="text-xl font-bold text-yellow-800 mb-2">الاشتراك الشهري للمنصة 🌟</h3>
+        <p class="text-3xl font-black text-yellow-900 my-4">10 جنيه مصري / شهرياً</p>
+        <p class="text-gray-700 mb-6">اشترك الآن للوصول الكامل إلى الشروحات والأوراق والاختبارات.</p>
+        <button onclick="requestSubscription()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700">تواصل مع المالك للتفعيل</button>
+      </div>
+    </div>
+
+    <!-- 3. واجهة الطالب المشترك -->
+    <div id="student-dashboard" class="hidden-section space-y-6">
+      <div class="bg-green-100 text-green-800 p-4 rounded-lg font-semibold">
+        مرحباً بك! اشتراكك فعال الآن في منصة الصعيدي.
+      </div>
+      
+      <!-- الميزات المتاحة -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+          <h4 class="font-bold text-blue-800 mb-2">🎥 فيديوهات شرح متميزة</h4>
+          <p class="text-sm text-gray-600">دروس مشروحة بأعلى جودة وتفصيل.</p>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
+          <h4 class="font-bold text-purple-800 mb-2">📄 ملفات PDF لكل درس</h4>
+          <p class="text-sm text-gray-600">حمل المذكرات والملخصات بسهولة.</p>
+        </div>
+        <div class="bg-orange-50 p-4 rounded-xl border border-orange-200">
+          <h4 class="font-bold text-orange-800 mb-2">📝 اختبارات تقييمية</h4>
+          <p class="text-sm text-gray-600">تابع مستواك أولاً بأول.</p>
+        </div>
+      </div>
+
+      <!-- قسم الاختبار الإلزامي -->
+      <div id="quiz-section" class="bg-white border-2 border-red-400 p-6 rounded-xl">
+        <h3 class="text-xl font-bold text-red-600 mb-2">⚠️ اختبار إلزامي مطلوب منك الآن!</h3>
+        <form id="student-quiz-form" onsubmit="submitQuiz(event)">
+          <div id="quiz-questions-container" class="space-y-4 my-4"></div>
+          <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700">تسليم الإجابات للمالك</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. لوحة تحكم المالك (Admin Panel) -->
+    <div id="admin-dashboard" class="hidden-section space-y-8">
+      <div class="bg-purple-100 text-purple-900 p-4 rounded-lg font-bold">
+        🛠️ أهلاً بك يا مالك المنصة (لوحة التحكم الخاصة)
+      </div>
+
+      <!-- إضافة سؤال جديد -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">إضافة سؤال جديد في الاختبار الإلزامي:</h3>
+        <form onsubmit="addQuestion(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">نوع السؤال:</label>
+            <select id="q-type" class="w-full p-2 border rounded-lg">
+              <option value="علل">علل</option>
+              <option value="بم تفسر">بم تفسر</option>
+              <option value="صح وغلط">صح أم خطأ</option>
+              <option value="مصطلح علمي">ما المصطلح العلمي</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">نص السؤال:</label>
+            <input type="text" id="q-text" required class="w-full p-2 border rounded-lg" placeholder="اكتب السؤال هنا...">
+          </div>
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">إضافة السؤال للاختبار</button>
+        </form>
+      </div>
+
+      <!-- قائمة إجابات ونتائج الطلاب -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">📊 إجابات الطلاب المسجلة:</h3>
+        <div id="student-results-list" class="space-y-3"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // إعدادات Firebase الخاصة بمشروعك 100%
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzmsLzxEYawqypv24ugoY9eiaHfWdeavM",
+      authDomain: "alsaidi-platform.firebaseapp.com",
+      projectId: "alsaidi-platform",
+      storageBucket: "alsaidi-platform.firebasestorage.app",
+      messagingSenderId: "850470059128",
+      appId: "1:850470059128:web:f90842e8eb6dd03dc9018d",
+      measurementId: "G-7PWJD2CJT9"
+    };
+
+    // البريد الإلكتروني للمالك
+    const ADMIN_EMAIL = "cyberhaker2000@gmail.com"; 
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      if (user) {
+        document.getElementById('login-btn').classList.add('hidden-section');
+        document.getElementById('logout-btn').classList.remove('hidden-section');
+        document.getElementById('welcome-screen').classList.add('hidden-section');
+
+        requestNotificationPermission();
+
+        if (user.email === ADMIN_EMAIL) {
+          // فتح لوحة المالك تلقائياً
+          document.getElementById('admin-dashboard').classList.remove('hidden-section');
+          loadAdminData();
+        } else {
+          // التحقق من حالة اشتراك الطالب
+          checkStudentSubscription(user);
+        }
+      } else {
+        document.getElementById('login-btn').classList.remove('hidden-section');
+        document.getElementById('logout-btn').classList.add('hidden-section');
+        document.getElementById('welcome-screen').classList.remove('hidden-section');
+        document.getElementById('unsubscribed-screen').classList.add('hidden-section');
+        document.getElementById('student-dashboard').classList.add('hidden-section');
+        document.getElementById('admin-dashboard').classList.add('hidden-section');
+      }
+    });
+
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => alert("خطأ في تسجيل الدخول: " + err.message));
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function checkStudentSubscription(user) {
+      db.collection('students').doc(user.uid).get().then(doc => {
+        if (doc.exists && doc.data().isSubscribed) {
+          document.getElementById('student-dashboard').classList.remove('hidden-section');
+          loadQuizForStudent();
+        } else {
+          document.getElementById('unsubscribed-screen').classList.remove('hidden-section');
+        }
+      });
+    }
+
+    function requestSubscription() {
+      alert("يرجى التواصل مع المالك لتفعيل الاشتراك بـ 10 جنيهات!");
+    }
+
+    // إضافة سؤال جديد بواسطة المالك
+    function addQuestion(e) {
+      e.preventDefault();
+      const type = document.getElementById('q-type').value;
+      const text = document.getElementById('q-text').value;
+
+      db.collection('quizzes').add({
+        type: type,
+        text: text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تمت إضافة السؤال بنجاح إلى الاختبار!");
+        document.getElementById('q-text').value = '';
+      });
+    }
+
+    // عرض الأسئلة للطالب
+    function loadQuizForStudent() {
+      db.collection('quizzes').get().then(snapshot => {
+        const container = document.getElementById('quiz-questions-container');
+        container.innerHTML = '';
+        if(snapshot.empty) {
+          container.innerHTML = '<p class="text-gray-500">لا يوجد اختبارات حالياً.</p>';
+          return;
+        }
+        snapshot.docs.forEach((doc, idx) => {
+          const q = doc.data();
+          container.innerHTML += `
+            <div class="border p-3 rounded-lg bg-gray-50">
+              <p class="font-bold text-gray-800">س${idx + 1} (${q.type}): ${q.text}</p>
+              <input type="text" name="ans_${doc.id}" required class="w-full p-2 border rounded mt-2" placeholder="اكتب إجابتك هنا...">
+            </div>
+          `;
+        });
+      });
+    }
+
+    // إرسال الإجابات إلى Firebase
+    function submitQuiz(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const answers = {};
+      formData.forEach((val, key) => answers[key] = val);
+
+      db.collection('results').add({
+        studentName: currentUser.displayName,
+        studentEmail: currentUser.email,
+        answers: answers,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تم تسليم إجاباتك بنجاح للمالك!");
+      });
+    }
+
+    // عرض نتائج الطلاب في لوحة تحكم المالك
+    function loadAdminData() {
+      db.collection('results').onSnapshot(snapshot => {
+        const list = document.getElementById('student-results-list');
+        list.innerHTML = '';
+        if(snapshot.empty) {
+          list.innerHTML = '<p class="text-gray-500">لم يقم أي طالب بتقديم الاختبار بعد.</p>';
+          return;
+        }
+        snapshot.docs.forEach(doc => {
+          const res = doc.data();
+          let ansText = "";
+          for (let key in res.answers) {
+            ansText += `<li>${res.answers[key]}</li>`;
+          }
+          list.innerHTML += `
+            <div class="p-4 bg-white border rounded-lg shadow-sm">
+              <p class="font-bold text-blue-700">الطالب: ${res.studentName} (${res.studentEmail})</p>
+              <p class="text-xs text-gray-400 mb-2">تاريخ التسليم: ${res.submittedAt ? res.submittedAt.toDate().toLocaleString('ar-EG') : 'الآن'}</p>
+              <div class="text-sm bg-gray-50 p-2 rounded border">
+                <strong>الإجابات:</strong>
+                <ul class="list-disc mr-4">${ansText}</ul>
+              </div>
+            </div>
+          `;
+        });
+      });
+    }
+
+    // تفعيل الإشعارات في المتصفح
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('تم تفعيل صلاحيات الإشعارات.');
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة الصعيدي التعليمية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDKs (Compat version for HTML direct script) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; }
+    .hidden-section { display: none !important; }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+  <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6">
+    <!-- الهيدر الرئيسي -->
+    <div class="flex justify-between items-center border-b pb-4 mb-6">
+      <h1 class="text-2xl font-bold text-blue-700">منصة الصعيدي التعليمية 🎓</h1>
+      <div id="auth-status">
+        <button id="login-btn" onclick="loginWithGoogle()" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700">تسجيل الدخول بحساب Google</button>
+        <button id="logout-btn" onclick="logout()" class="hidden-section bg-red-500 text-white px-4 py-2 rounded-lg font-semibold">تسجيل الخروج</button>
+      </div>
+    </div>
+
+    <!-- 1. شاشة تسجيل الدخول الإجبارية -->
+    <div id="welcome-screen" class="text-center py-12">
+      <h2 class="text-3xl font-extrabold text-gray-800 mb-4">أهلاً بك في منصة الصعيدي!</h2>
+      <p class="text-gray-600 mb-6">يرجى تسجيل الدخول بحساب Google أولاً للتأكد من هويتك وصلاحياتك.</p>
+    </div>
+
+    <!-- 2. واجهة الطالب غير المشترك -->
+    <div id="unsubscribed-screen" class="hidden-section text-center py-8">
+      <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl max-w-md mx-auto">
+        <h3 class="text-xl font-bold text-yellow-800 mb-2">الاشتراك الشهري للمنصة 🌟</h3>
+        <p class="text-3xl font-black text-yellow-900 my-4">10 جنيه مصري / شهرياً</p>
+        <p class="text-gray-700 mb-6">اشترك الآن للوصول الكامل إلى الشروحات والأوراق والاختبارات.</p>
+        <button onclick="requestSubscription()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700">تواصل مع المالك للتفعيل</button>
+      </div>
+    </div>
+
+    <!-- 3. واجهة الطالب المشترك -->
+    <div id="student-dashboard" class="hidden-section space-y-6">
+      <div class="bg-green-100 text-green-800 p-4 rounded-lg font-semibold">
+        مرحباً بك! اشتراكك فعال الآن في منصة الصعيدي.
+      </div>
+      
+      <!-- الميزات المتاحة -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+          <h4 class="font-bold text-blue-800 mb-2">🎥 فيديوهات شرح متميزة</h4>
+          <p class="text-sm text-gray-600">دروس مشروحة بأعلى جودة وتفصيل.</p>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
+          <h4 class="font-bold text-purple-800 mb-2">📄 ملفات PDF لكل درس</h4>
+          <p class="text-sm text-gray-600">حمل المذكرات والملخصات بسهولة.</p>
+        </div>
+        <div class="bg-orange-50 p-4 rounded-xl border border-orange-200">
+          <h4 class="font-bold text-orange-800 mb-2">📝 اختبارات تقييمية</h4>
+          <p class="text-sm text-gray-600">تابع مستواك أولاً بأول.</p>
+        </div>
+      </div>
+
+      <!-- قسم الاختبار الإلزامي -->
+      <div id="quiz-section" class="bg-white border-2 border-red-400 p-6 rounded-xl">
+        <h3 class="text-xl font-bold text-red-600 mb-2">⚠️ اختبار إلزامي مطلوب منك الآن!</h3>
+        <form id="student-quiz-form" onsubmit="submitQuiz(event)">
+          <div id="quiz-questions-container" class="space-y-4 my-4"></div>
+          <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700">تسليم الإجابات للمالك</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. لوحة تحكم المالك (Admin Panel) -->
+    <div id="admin-dashboard" class="hidden-section space-y-8">
+      <div class="bg-purple-100 text-purple-900 p-4 rounded-lg font-bold">
+        🛠️ أهلاً بك يا مالك المنصة (لوحة التحكم الخاصة)
+      </div>
+
+      <!-- إضافة سؤال جديد -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">إضافة سؤال جديد في الاختبار الإلزامي:</h3>
+        <form onsubmit="addQuestion(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">نوع السؤال:</label>
+            <select id="q-type" class="w-full p-2 border rounded-lg">
+              <option value="علل">علل</option>
+              <option value="بم تفسر">بم تفسر</option>
+              <option value="صح وغلط">صح أم خطأ</option>
+              <option value="مصطلح علمي">ما المصطلح العلمي</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">نص السؤال:</label>
+            <input type="text" id="q-text" required class="w-full p-2 border rounded-lg" placeholder="اكتب السؤال هنا...">
+          </div>
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">إضافة السؤال للاختبار</button>
+        </form>
+      </div>
+
+      <!-- قائمة إجابات ونتائج الطلاب -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">📊 إجابات الطلاب المسجلة:</h3>
+        <div id="student-results-list" class="space-y-3"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // إعدادات Firebase الخاصة بمشروعك 100%
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzmsLzxEYawqypv24ugoY9eiaHfWdeavM",
+      authDomain: "alsaidi-platform.firebaseapp.com",
+      projectId: "alsaidi-platform",
+      storageBucket: "alsaidi-platform.firebasestorage.app",
+      messagingSenderId: "850470059128",
+      appId: "1:850470059128:web:f90842e8eb6dd03dc9018d",
+      measurementId: "G-7PWJD2CJT9"
+    };
+
+    // البريد الإلكتروني للمالك
+    const ADMIN_EMAIL = "cyberhaker2000@gmail.com"; 
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      if (user) {
+        document.getElementById('login-btn').classList.add('hidden-section');
+        document.getElementById('logout-btn').classList.remove('hidden-section');
+        document.getElementById('welcome-screen').classList.add('hidden-section');
+
+        requestNotificationPermission();
+
+        if (user.email === ADMIN_EMAIL) {
+          // فتح لوحة المالك تلقائياً
+          document.getElementById('admin-dashboard').classList.remove('hidden-section');
+          loadAdminData();
+        } else {
+          // التحقق من حالة اشتراك الطالب
+          checkStudentSubscription(user);
+        }
+      } else {
+        document.getElementById('login-btn').classList.remove('hidden-section');
+        document.getElementById('logout-btn').classList.add('hidden-section');
+        document.getElementById('welcome-screen').classList.remove('hidden-section');
+        document.getElementById('unsubscribed-screen').classList.add('hidden-section');
+        document.getElementById('student-dashboard').classList.add('hidden-section');
+        document.getElementById('admin-dashboard').classList.add('hidden-section');
+      }
+    });
+
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => alert("خطأ في تسجيل الدخول: " + err.message));
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function checkStudentSubscription(user) {
+      db.collection('students').doc(user.uid).get().then(doc => {
+        if (doc.exists && doc.data().isSubscribed) {
+          document.getElementById('student-dashboard').classList.remove('hidden-section');
+          loadQuizForStudent();
+        } else {
+          document.getElementById('unsubscribed-screen').classList.remove('hidden-section');
+        }
+      });
+    }
+
+    function requestSubscription() {
+      alert("يرجى التواصل مع المالك لتفعيل الاشتراك بـ 10 جنيهات!");
+    }
+
+    // إضافة سؤال جديد بواسطة المالك
+    function addQuestion(e) {
+      e.preventDefault();
+      const type = document.getElementById('q-type').value;
+      const text = document.getElementById('q-text').value;
+
+      db.collection('quizzes').add({
+        type: type,
+        text: text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تمت إضافة السؤال بنجاح إلى الاختبار!");
+        document.getElementById('q-text').value = '';
+      });
+    }
+
+    // عرض الأسئلة للطالب
+    function loadQuizForStudent() {
+      db.collection('quizzes').get().then(snapshot => {
+        const container = document.getElementById('quiz-questions-container');
+        container.innerHTML = '';
+        if(snapshot.empty) {
+          container.innerHTML = '<p class="text-gray-500">لا يوجد اختبارات حالياً.</p>';
+          return;
+        }
+        snapshot.docs.forEach((doc, idx) => {
+          const q = doc.data();
+          container.innerHTML += `
+            <div class="border p-3 rounded-lg bg-gray-50">
+              <p class="font-bold text-gray-800">س${idx + 1} (${q.type}): ${q.text}</p>
+              <input type="text" name="ans_${doc.id}" required class="w-full p-2 border rounded mt-2" placeholder="اكتب إجابتك هنا...">
+            </div>
+          `;
+        });
+      });
+    }
+
+    // إرسال الإجابات إلى Firebase
+    function submitQuiz(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const answers = {};
+      formData.forEach((val, key) => answers[key] = val);
+
+      db.collection('results').add({
+        studentName: currentUser.displayName,
+        studentEmail: currentUser.email,
+        answers: answers,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تم تسليم إجاباتك بنجاح للمالك!");
+      });
+    }
+
+    // عرض نتائج الطلاب في لوحة تحكم المالك
+    function loadAdminData() {
+      db.collection('results').onSnapshot(snapshot => {
+        const list = document.getElementById('student-results-list');
+        list.innerHTML = '';
+        if(snapshot.empty) {
+          list.innerHTML = '<p class="text-gray-500">لم يقم أي طالب بتقديم الاختبار بعد.</p>';
+          return;
+        }
+        snapshot.docs.forEach(doc => {
+          const res = doc.data();
+          let ansText = "";
+          for (let key in res.answers) {
+            ansText += `<li>${res.answers[key]}</li>`;
+          }
+          list.innerHTML += `
+            <div class="p-4 bg-white border rounded-lg shadow-sm">
+              <p class="font-bold text-blue-700">الطالب: ${res.studentName} (${res.studentEmail})</p>
+              <p class="text-xs text-gray-400 mb-2">تاريخ التسليم: ${res.submittedAt ? res.submittedAt.toDate().toLocaleString('ar-EG') : 'الآن'}</p>
+              <div class="text-sm bg-gray-50 p-2 rounded border">
+                <strong>الإجابات:</strong>
+                <ul class="list-disc mr-4">${ansText}</ul>
+              </div>
+            </div>
+          `;
+        });
+      });
+    }
+
+    // تفعيل الإشعارات في المتصفح
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('تم تفعيل صلاحيات الإشعارات.');
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة الصعيدي التعليمية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDKs (Compat version for HTML direct script) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; }
+    .hidden-section { display: none !important; }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+  <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6">
+    <!-- الهيدر الرئيسي -->
+    <div class="flex justify-between items-center border-b pb-4 mb-6">
+      <h1 class="text-2xl font-bold text-blue-700">منصة الصعيدي التعليمية 🎓</h1>
+      <div id="auth-status">
+        <button id="login-btn" onclick="loginWithGoogle()" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700">تسجيل الدخول بحساب Google</button>
+        <button id="logout-btn" onclick="logout()" class="hidden-section bg-red-500 text-white px-4 py-2 rounded-lg font-semibold">تسجيل الخروج</button>
+      </div>
+    </div>
+
+    <!-- 1. شاشة تسجيل الدخول الإجبارية -->
+    <div id="welcome-screen" class="text-center py-12">
+      <h2 class="text-3xl font-extrabold text-gray-800 mb-4">أهلاً بك في منصة الصعيدي!</h2>
+      <p class="text-gray-600 mb-6">يرجى تسجيل الدخول بحساب Google أولاً للتأكد من هويتك وصلاحياتك.</p>
+    </div>
+
+    <!-- 2. واجهة الطالب غير المشترك -->
+    <div id="unsubscribed-screen" class="hidden-section text-center py-8">
+      <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl max-w-md mx-auto">
+        <h3 class="text-xl font-bold text-yellow-800 mb-2">الاشتراك الشهري للمنصة 🌟</h3>
+        <p class="text-3xl font-black text-yellow-900 my-4">10 جنيه مصري / شهرياً</p>
+        <p class="text-gray-700 mb-6">اشترك الآن للوصول الكامل إلى الشروحات والأوراق والاختبارات.</p>
+        <button onclick="requestSubscription()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700">تواصل مع المالك للتفعيل</button>
+      </div>
+    </div>
+
+    <!-- 3. واجهة الطالب المشترك -->
+    <div id="student-dashboard" class="hidden-section space-y-6">
+      <div class="bg-green-100 text-green-800 p-4 rounded-lg font-semibold">
+        مرحباً بك! اشتراكك فعال الآن في منصة الصعيدي.
+      </div>
+      
+      <!-- الميزات المتاحة -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+          <h4 class="font-bold text-blue-800 mb-2">🎥 فيديوهات شرح متميزة</h4>
+          <p class="text-sm text-gray-600">دروس مشروحة بأعلى جودة وتفصيل.</p>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
+          <h4 class="font-bold text-purple-800 mb-2">📄 ملفات PDF لكل درس</h4>
+          <p class="text-sm text-gray-600">حمل المذكرات والملخصات بسهولة.</p>
+        </div>
+        <div class="bg-orange-50 p-4 rounded-xl border border-orange-200">
+          <h4 class="font-bold text-orange-800 mb-2">📝 اختبارات تقييمية</h4>
+          <p class="text-sm text-gray-600">تابع مستواك أولاً بأول.</p>
+        </div>
+      </div>
+
+      <!-- قسم الاختبار الإلزامي -->
+      <div id="quiz-section" class="bg-white border-2 border-red-400 p-6 rounded-xl">
+        <h3 class="text-xl font-bold text-red-600 mb-2">⚠️ اختبار إلزامي مطلوب منك الآن!</h3>
+        <form id="student-quiz-form" onsubmit="submitQuiz(event)">
+          <div id="quiz-questions-container" class="space-y-4 my-4"></div>
+          <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700">تسليم الإجابات للمالك</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. لوحة تحكم المالك (Admin Panel) -->
+    <div id="admin-dashboard" class="hidden-section space-y-8">
+      <div class="bg-purple-100 text-purple-900 p-4 rounded-lg font-bold">
+        🛠️ أهلاً بك يا مالك المنصة (لوحة التحكم الخاصة)
+      </div>
+
+      <!-- إضافة سؤال جديد -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">إضافة سؤال جديد في الاختبار الإلزامي:</h3>
+        <form onsubmit="addQuestion(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">نوع السؤال:</label>
+            <select id="q-type" class="w-full p-2 border rounded-lg">
+              <option value="علل">علل</option>
+              <option value="بم تفسر">بم تفسر</option>
+              <option value="صح وغلط">صح أم خطأ</option>
+              <option value="مصطلح علمي">ما المصطلح العلمي</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">نص السؤال:</label>
+            <input type="text" id="q-text" required class="w-full p-2 border rounded-lg" placeholder="اكتب السؤال هنا...">
+          </div>
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">إضافة السؤال للاختبار</button>
+        </form>
+      </div>
+
+      <!-- قائمة إجابات ونتائج الطلاب -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">📊 إجابات الطلاب المسجلة:</h3>
+        <div id="student-results-list" class="space-y-3"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // إعدادات Firebase الخاصة بمشروعك 100%
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzmsLzxEYawqypv24ugoY9eiaHfWdeavM",
+      authDomain: "alsaidi-platform.firebaseapp.com",
+      projectId: "alsaidi-platform",
+      storageBucket: "alsaidi-platform.firebasestorage.app",
+      messagingSenderId: "850470059128",
+      appId: "1:850470059128:web:f90842e8eb6dd03dc9018d",
+      measurementId: "G-7PWJD2CJT9"
+    };
+
+    // البريد الإلكتروني للمالك
+    const ADMIN_EMAIL = "cyberhaker2000@gmail.com"; 
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      if (user) {
+        document.getElementById('login-btn').classList.add('hidden-section');
+        document.getElementById('logout-btn').classList.remove('hidden-section');
+        document.getElementById('welcome-screen').classList.add('hidden-section');
+
+        requestNotificationPermission();
+
+        if (user.email === ADMIN_EMAIL) {
+          // فتح لوحة المالك تلقائياً
+          document.getElementById('admin-dashboard').classList.remove('hidden-section');
+          loadAdminData();
+        } else {
+          // التحقق من حالة اشتراك الطالب
+          checkStudentSubscription(user);
+        }
+      } else {
+        document.getElementById('login-btn').classList.remove('hidden-section');
+        document.getElementById('logout-btn').classList.add('hidden-section');
+        document.getElementById('welcome-screen').classList.remove('hidden-section');
+        document.getElementById('unsubscribed-screen').classList.add('hidden-section');
+        document.getElementById('student-dashboard').classList.add('hidden-section');
+        document.getElementById('admin-dashboard').classList.add('hidden-section');
+      }
+    });
+
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => alert("خطأ في تسجيل الدخول: " + err.message));
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function checkStudentSubscription(user) {
+      db.collection('students').doc(user.uid).get().then(doc => {
+        if (doc.exists && doc.data().isSubscribed) {
+          document.getElementById('student-dashboard').classList.remove('hidden-section');
+          loadQuizForStudent();
+        } else {
+          document.getElementById('unsubscribed-screen').classList.remove('hidden-section');
+        }
+      });
+    }
+
+    function requestSubscription() {
+      alert("يرجى التواصل مع المالك لتفعيل الاشتراك بـ 10 جنيهات!");
+    }
+
+    // إضافة سؤال جديد بواسطة المالك
+    function addQuestion(e) {
+      e.preventDefault();
+      const type = document.getElementById('q-type').value;
+      const text = document.getElementById('q-text').value;
+
+      db.collection('quizzes').add({
+        type: type,
+        text: text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تمت إضافة السؤال بنجاح إلى الاختبار!");
+        document.getElementById('q-text').value = '';
+      });
+    }
+
+    // عرض الأسئلة للطالب
+    function loadQuizForStudent() {
+      db.collection('quizzes').get().then(snapshot => {
+        const container = document.getElementById('quiz-questions-container');
+        container.innerHTML = '';
+        if(snapshot.empty) {
+          container.innerHTML = '<p class="text-gray-500">لا يوجد اختبارات حالياً.</p>';
+          return;
+        }
+        snapshot.docs.forEach((doc, idx) => {
+          const q = doc.data();
+          container.innerHTML += `
+            <div class="border p-3 rounded-lg bg-gray-50">
+              <p class="font-bold text-gray-800">س${idx + 1} (${q.type}): ${q.text}</p>
+              <input type="text" name="ans_${doc.id}" required class="w-full p-2 border rounded mt-2" placeholder="اكتب إجابتك هنا...">
+            </div>
+          `;
+        });
+      });
+    }
+
+    // إرسال الإجابات إلى Firebase
+    function submitQuiz(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const answers = {};
+      formData.forEach((val, key) => answers[key] = val);
+
+      db.collection('results').add({
+        studentName: currentUser.displayName,
+        studentEmail: currentUser.email,
+        answers: answers,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تم تسليم إجاباتك بنجاح للمالك!");
+      });
+    }
+
+    // عرض نتائج الطلاب في لوحة تحكم المالك
+    function loadAdminData() {
+      db.collection('results').onSnapshot(snapshot => {
+        const list = document.getElementById('student-results-list');
+        list.innerHTML = '';
+        if(snapshot.empty) {
+          list.innerHTML = '<p class="text-gray-500">لم يقم أي طالب بتقديم الاختبار بعد.</p>';
+          return;
+        }
+        snapshot.docs.forEach(doc => {
+          const res = doc.data();
+          let ansText = "";
+          for (let key in res.answers) {
+            ansText += `<li>${res.answers[key]}</li>`;
+          }
+          list.innerHTML += `
+            <div class="p-4 bg-white border rounded-lg shadow-sm">
+              <p class="font-bold text-blue-700">الطالب: ${res.studentName} (${res.studentEmail})</p>
+              <p class="text-xs text-gray-400 mb-2">تاريخ التسليم: ${res.submittedAt ? res.submittedAt.toDate().toLocaleString('ar-EG') : 'الآن'}</p>
+              <div class="text-sm bg-gray-50 p-2 rounded border">
+                <strong>الإجابات:</strong>
+                <ul class="list-disc mr-4">${ansText}</ul>
+              </div>
+            </div>
+          `;
+        });
+      });
+    }
+
+    // تفعيل الإشعارات في المتصفح
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('تم تفعيل صلاحيات الإشعارات.');
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة الصعيدي التعليمية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDKs (Compat version for HTML direct script) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; }
+    .hidden-section { display: none !important; }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+  <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6">
+    <!-- الهيدر الرئيسي -->
+    <div class="flex justify-between items-center border-b pb-4 mb-6">
+      <h1 class="text-2xl font-bold text-blue-700">منصة الصعيدي التعليمية 🎓</h1>
+      <div id="auth-status">
+        <button id="login-btn" onclick="loginWithGoogle()" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700">تسجيل الدخول بحساب Google</button>
+        <button id="logout-btn" onclick="logout()" class="hidden-section bg-red-500 text-white px-4 py-2 rounded-lg font-semibold">تسجيل الخروج</button>
+      </div>
+    </div>
+
+    <!-- 1. شاشة تسجيل الدخول الإجبارية -->
+    <div id="welcome-screen" class="text-center py-12">
+      <h2 class="text-3xl font-extrabold text-gray-800 mb-4">أهلاً بك في منصة الصعيدي!</h2>
+      <p class="text-gray-600 mb-6">يرجى تسجيل الدخول بحساب Google أولاً للتأكد من هويتك وصلاحياتك.</p>
+    </div>
+
+    <!-- 2. واجهة الطالب غير المشترك -->
+    <div id="unsubscribed-screen" class="hidden-section text-center py-8">
+      <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl max-w-md mx-auto">
+        <h3 class="text-xl font-bold text-yellow-800 mb-2">الاشتراك الشهري للمنصة 🌟</h3>
+        <p class="text-3xl font-black text-yellow-900 my-4">10 جنيه مصري / شهرياً</p>
+        <p class="text-gray-700 mb-6">اشترك الآن للوصول الكامل إلى الشروحات والأوراق والاختبارات.</p>
+        <button onclick="requestSubscription()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700">تواصل مع المالك للتفعيل</button>
+      </div>
+    </div>
+
+    <!-- 3. واجهة الطالب المشترك -->
+    <div id="student-dashboard" class="hidden-section space-y-6">
+      <div class="bg-green-100 text-green-800 p-4 rounded-lg font-semibold">
+        مرحباً بك! اشتراكك فعال الآن في منصة الصعيدي.
+      </div>
+      
+      <!-- الميزات المتاحة -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+          <h4 class="font-bold text-blue-800 mb-2">🎥 فيديوهات شرح متميزة</h4>
+          <p class="text-sm text-gray-600">دروس مشروحة بأعلى جودة وتفصيل.</p>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
+          <h4 class="font-bold text-purple-800 mb-2">📄 ملفات PDF لكل درس</h4>
+          <p class="text-sm text-gray-600">حمل المذكرات والملخصات بسهولة.</p>
+        </div>
+        <div class="bg-orange-50 p-4 rounded-xl border border-orange-200">
+          <h4 class="font-bold text-orange-800 mb-2">📝 اختبارات تقييمية</h4>
+          <p class="text-sm text-gray-600">تابع مستواك أولاً بأول.</p>
+        </div>
+      </div>
+
+      <!-- قسم الاختبار الإلزامي -->
+      <div id="quiz-section" class="bg-white border-2 border-red-400 p-6 rounded-xl">
+        <h3 class="text-xl font-bold text-red-600 mb-2">⚠️ اختبار إلزامي مطلوب منك الآن!</h3>
+        <form id="student-quiz-form" onsubmit="submitQuiz(event)">
+          <div id="quiz-questions-container" class="space-y-4 my-4"></div>
+          <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700">تسليم الإجابات للمالك</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. لوحة تحكم المالك (Admin Panel) -->
+    <div id="admin-dashboard" class="hidden-section space-y-8">
+      <div class="bg-purple-100 text-purple-900 p-4 rounded-lg font-bold">
+        🛠️ أهلاً بك يا مالك المنصة (لوحة التحكم الخاصة)
+      </div>
+
+      <!-- إضافة سؤال جديد -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">إضافة سؤال جديد في الاختبار الإلزامي:</h3>
+        <form onsubmit="addQuestion(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">نوع السؤال:</label>
+            <select id="q-type" class="w-full p-2 border rounded-lg">
+              <option value="علل">علل</option>
+              <option value="بم تفسر">بم تفسر</option>
+              <option value="صح وغلط">صح أم خطأ</option>
+              <option value="مصطلح علمي">ما المصطلح العلمي</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">نص السؤال:</label>
+            <input type="text" id="q-text" required class="w-full p-2 border rounded-lg" placeholder="اكتب السؤال هنا...">
+          </div>
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">إضافة السؤال للاختبار</button>
+        </form>
+      </div>
+
+      <!-- قائمة إجابات ونتائج الطلاب -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">📊 إجابات الطلاب المسجلة:</h3>
+        <div id="student-results-list" class="space-y-3"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // إعدادات Firebase الخاصة بمشروعك 100%
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzmsLzxEYawqypv24ugoY9eiaHfWdeavM",
+      authDomain: "alsaidi-platform.firebaseapp.com",
+      projectId: "alsaidi-platform",
+      storageBucket: "alsaidi-platform.firebasestorage.app",
+      messagingSenderId: "850470059128",
+      appId: "1:850470059128:web:f90842e8eb6dd03dc9018d",
+      measurementId: "G-7PWJD2CJT9"
+    };
+
+    // البريد الإلكتروني للمالك
+    const ADMIN_EMAIL = "cyberhaker2000@gmail.com"; 
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      if (user) {
+        document.getElementById('login-btn').classList.add('hidden-section');
+        document.getElementById('logout-btn').classList.remove('hidden-section');
+        document.getElementById('welcome-screen').classList.add('hidden-section');
+
+        requestNotificationPermission();
+
+        if (user.email === ADMIN_EMAIL) {
+          // فتح لوحة المالك تلقائياً
+          document.getElementById('admin-dashboard').classList.remove('hidden-section');
+          loadAdminData();
+        } else {
+          // التحقق من حالة اشتراك الطالب
+          checkStudentSubscription(user);
+        }
+      } else {
+        document.getElementById('login-btn').classList.remove('hidden-section');
+        document.getElementById('logout-btn').classList.add('hidden-section');
+        document.getElementById('welcome-screen').classList.remove('hidden-section');
+        document.getElementById('unsubscribed-screen').classList.add('hidden-section');
+        document.getElementById('student-dashboard').classList.add('hidden-section');
+        document.getElementById('admin-dashboard').classList.add('hidden-section');
+      }
+    });
+
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => alert("خطأ في تسجيل الدخول: " + err.message));
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function checkStudentSubscription(user) {
+      db.collection('students').doc(user.uid).get().then(doc => {
+        if (doc.exists && doc.data().isSubscribed) {
+          document.getElementById('student-dashboard').classList.remove('hidden-section');
+          loadQuizForStudent();
+        } else {
+          document.getElementById('unsubscribed-screen').classList.remove('hidden-section');
+        }
+      });
+    }
+
+    function requestSubscription() {
+      alert("يرجى التواصل مع المالك لتفعيل الاشتراك بـ 10 جنيهات!");
+    }
+
+    // إضافة سؤال جديد بواسطة المالك
+    function addQuestion(e) {
+      e.preventDefault();
+      const type = document.getElementById('q-type').value;
+      const text = document.getElementById('q-text').value;
+
+      db.collection('quizzes').add({
+        type: type,
+        text: text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تمت إضافة السؤال بنجاح إلى الاختبار!");
+        document.getElementById('q-text').value = '';
+      });
+    }
+
+    // عرض الأسئلة للطالب
+    function loadQuizForStudent() {
+      db.collection('quizzes').get().then(snapshot => {
+        const container = document.getElementById('quiz-questions-container');
+        container.innerHTML = '';
+        if(snapshot.empty) {
+          container.innerHTML = '<p class="text-gray-500">لا يوجد اختبارات حالياً.</p>';
+          return;
+        }
+        snapshot.docs.forEach((doc, idx) => {
+          const q = doc.data();
+          container.innerHTML += `
+            <div class="border p-3 rounded-lg bg-gray-50">
+              <p class="font-bold text-gray-800">س${idx + 1} (${q.type}): ${q.text}</p>
+              <input type="text" name="ans_${doc.id}" required class="w-full p-2 border rounded mt-2" placeholder="اكتب إجابتك هنا...">
+            </div>
+          `;
+        });
+      });
+    }
+
+    // إرسال الإجابات إلى Firebase
+    function submitQuiz(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const answers = {};
+      formData.forEach((val, key) => answers[key] = val);
+
+      db.collection('results').add({
+        studentName: currentUser.displayName,
+        studentEmail: currentUser.email,
+        answers: answers,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تم تسليم إجاباتك بنجاح للمالك!");
+      });
+    }
+
+    // عرض نتائج الطلاب في لوحة تحكم المالك
+    function loadAdminData() {
+      db.collection('results').onSnapshot(snapshot => {
+        const list = document.getElementById('student-results-list');
+        list.innerHTML = '';
+        if(snapshot.empty) {
+          list.innerHTML = '<p class="text-gray-500">لم يقم أي طالب بتقديم الاختبار بعد.</p>';
+          return;
+        }
+        snapshot.docs.forEach(doc => {
+          const res = doc.data();
+          let ansText = "";
+          for (let key in res.answers) {
+            ansText += `<li>${res.answers[key]}</li>`;
+          }
+          list.innerHTML += `
+            <div class="p-4 bg-white border rounded-lg shadow-sm">
+              <p class="font-bold text-blue-700">الطالب: ${res.studentName} (${res.studentEmail})</p>
+              <p class="text-xs text-gray-400 mb-2">تاريخ التسليم: ${res.submittedAt ? res.submittedAt.toDate().toLocaleString('ar-EG') : 'الآن'}</p>
+              <div class="text-sm bg-gray-50 p-2 rounded border">
+                <strong>الإجابات:</strong>
+                <ul class="list-disc mr-4">${ansText}</ul>
+              </div>
+            </div>
+          `;
+        });
+      });
+    }
+
+    // تفعيل الإشعارات في المتصفح
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('تم تفعيل صلاحيات الإشعارات.');
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة الصعيدي التعليمية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDKs (Compat version for HTML direct script) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; }
+    .hidden-section { display: none !important; }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+  <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-6">
+    <!-- الهيدر الرئيسي -->
+    <div class="flex justify-between items-center border-b pb-4 mb-6">
+      <h1 class="text-2xl font-bold text-blue-700">منصة الصعيدي التعليمية 🎓</h1>
+      <div id="auth-status">
+        <button id="login-btn" onclick="loginWithGoogle()" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700">تسجيل الدخول بحساب Google</button>
+        <button id="logout-btn" onclick="logout()" class="hidden-section bg-red-500 text-white px-4 py-2 rounded-lg font-semibold">تسجيل الخروج</button>
+      </div>
+    </div>
+
+    <!-- 1. شاشة تسجيل الدخول الإجبارية -->
+    <div id="welcome-screen" class="text-center py-12">
+      <h2 class="text-3xl font-extrabold text-gray-800 mb-4">أهلاً بك في منصة الصعيدي!</h2>
+      <p class="text-gray-600 mb-6">يرجى تسجيل الدخول بحساب Google أولاً للتأكد من هويتك وصلاحياتك.</p>
+    </div>
+
+    <!-- 2. واجهة الطالب غير المشترك -->
+    <div id="unsubscribed-screen" class="hidden-section text-center py-8">
+      <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl max-w-md mx-auto">
+        <h3 class="text-xl font-bold text-yellow-800 mb-2">الاشتراك الشهري للمنصة 🌟</h3>
+        <p class="text-3xl font-black text-yellow-900 my-4">10 جنيه مصري / شهرياً</p>
+        <p class="text-gray-700 mb-6">اشترك الآن للوصول الكامل إلى الشروحات والأوراق والاختبارات.</p>
+        <button onclick="requestSubscription()" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-700">تواصل مع المالك للتفعيل</button>
+      </div>
+    </div>
+
+    <!-- 3. واجهة الطالب المشترك -->
+    <div id="student-dashboard" class="hidden-section space-y-6">
+      <div class="bg-green-100 text-green-800 p-4 rounded-lg font-semibold">
+        مرحباً بك! اشتراكك فعال الآن في منصة الصعيدي.
+      </div>
+      
+      <!-- الميزات المتاحة -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+          <h4 class="font-bold text-blue-800 mb-2">🎥 فيديوهات شرح متميزة</h4>
+          <p class="text-sm text-gray-600">دروس مشروحة بأعلى جودة وتفصيل.</p>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
+          <h4 class="font-bold text-purple-800 mb-2">📄 ملفات PDF لكل درس</h4>
+          <p class="text-sm text-gray-600">حمل المذكرات والملخصات بسهولة.</p>
+        </div>
+        <div class="bg-orange-50 p-4 rounded-xl border border-orange-200">
+          <h4 class="font-bold text-orange-800 mb-2">📝 اختبارات تقييمية</h4>
+          <p class="text-sm text-gray-600">تابع مستواك أولاً بأول.</p>
+        </div>
+      </div>
+
+      <!-- قسم الاختبار الإلزامي -->
+      <div id="quiz-section" class="bg-white border-2 border-red-400 p-6 rounded-xl">
+        <h3 class="text-xl font-bold text-red-600 mb-2">⚠️ اختبار إلزامي مطلوب منك الآن!</h3>
+        <form id="student-quiz-form" onsubmit="submitQuiz(event)">
+          <div id="quiz-questions-container" class="space-y-4 my-4"></div>
+          <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700">تسليم الإجابات للمالك</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. لوحة تحكم المالك (Admin Panel) -->
+    <div id="admin-dashboard" class="hidden-section space-y-8">
+      <div class="bg-purple-100 text-purple-900 p-4 rounded-lg font-bold">
+        🛠️ أهلاً بك يا مالك المنصة (لوحة التحكم الخاصة)
+      </div>
+
+      <!-- إضافة سؤال جديد -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">إضافة سؤال جديد في الاختبار الإلزامي:</h3>
+        <form onsubmit="addQuestion(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">نوع السؤال:</label>
+            <select id="q-type" class="w-full p-2 border rounded-lg">
+              <option value="علل">علل</option>
+              <option value="بم تفسر">بم تفسر</option>
+              <option value="صح وغلط">صح أم خطأ</option>
+              <option value="مصطلح علمي">ما المصطلح العلمي</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">نص السؤال:</label>
+            <input type="text" id="q-text" required class="w-full p-2 border rounded-lg" placeholder="اكتب السؤال هنا...">
+          </div>
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">إضافة السؤال للاختبار</button>
+        </form>
+      </div>
+
+      <!-- قائمة إجابات ونتائج الطلاب -->
+      <div class="bg-gray-50 p-6 rounded-xl border">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">📊 إجابات الطلاب المسجلة:</h3>
+        <div id="student-results-list" class="space-y-3"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // إعدادات Firebase الخاصة بمشروعك 100%
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzmsLzxEYawqypv24ugoY9eiaHfWdeavM",
+      authDomain: "alsaidi-platform.firebaseapp.com",
+      projectId: "alsaidi-platform",
+      storageBucket: "alsaidi-platform.firebasestorage.app",
+      messagingSenderId: "850470059128",
+      appId: "1:850470059128:web:f90842e8eb6dd03dc9018d",
+      measurementId: "G-7PWJD2CJT9"
+    };
+
+    // البريد الإلكتروني للمالك
+    const ADMIN_EMAIL = "cyberhaker2000@gmail.com"; 
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let currentUser = null;
+
+    auth.onAuthStateChanged(user => {
+      currentUser = user;
+      if (user) {
+        document.getElementById('login-btn').classList.add('hidden-section');
+        document.getElementById('logout-btn').classList.remove('hidden-section');
+        document.getElementById('welcome-screen').classList.add('hidden-section');
+
+        requestNotificationPermission();
+
+        if (user.email === ADMIN_EMAIL) {
+          // فتح لوحة المالك تلقائياً
+          document.getElementById('admin-dashboard').classList.remove('hidden-section');
+          loadAdminData();
+        } else {
+          // التحقق من حالة اشتراك الطالب
+          checkStudentSubscription(user);
+        }
+      } else {
+        document.getElementById('login-btn').classList.remove('hidden-section');
+        document.getElementById('logout-btn').classList.add('hidden-section');
+        document.getElementById('welcome-screen').classList.remove('hidden-section');
+        document.getElementById('unsubscribed-screen').classList.add('hidden-section');
+        document.getElementById('student-dashboard').classList.add('hidden-section');
+        document.getElementById('admin-dashboard').classList.add('hidden-section');
+      }
+    });
+
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => alert("خطأ في تسجيل الدخول: " + err.message));
+    }
+
+    function logout() {
+      auth.signOut();
+    }
+
+    function checkStudentSubscription(user) {
+      db.collection('students').doc(user.uid).get().then(doc => {
+        if (doc.exists && doc.data().isSubscribed) {
+          document.getElementById('student-dashboard').classList.remove('hidden-section');
+          loadQuizForStudent();
+        } else {
+          document.getElementById('unsubscribed-screen').classList.remove('hidden-section');
+        }
+      });
+    }
+
+    function requestSubscription() {
+      alert("يرجى التواصل مع المالك لتفعيل الاشتراك بـ 10 جنيهات!");
+    }
+
+    // إضافة سؤال جديد بواسطة المالك
+    function addQuestion(e) {
+      e.preventDefault();
+      const type = document.getElementById('q-type').value;
+      const text = document.getElementById('q-text').value;
+
+      db.collection('quizzes').add({
+        type: type,
+        text: text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تمت إضافة السؤال بنجاح إلى الاختبار!");
+        document.getElementById('q-text').value = '';
+      });
+    }
+
+    // عرض الأسئلة للطالب
+    function loadQuizForStudent() {
+      db.collection('quizzes').get().then(snapshot => {
+        const container = document.getElementById('quiz-questions-container');
+        container.innerHTML = '';
+        if(snapshot.empty) {
+          container.innerHTML = '<p class="text-gray-500">لا يوجد اختبارات حالياً.</p>';
+          return;
+        }
+        snapshot.docs.forEach((doc, idx) => {
+          const q = doc.data();
+          container.innerHTML += `
+            <div class="border p-3 rounded-lg bg-gray-50">
+              <p class="font-bold text-gray-800">س${idx + 1} (${q.type}): ${q.text}</p>
+              <input type="text" name="ans_${doc.id}" required class="w-full p-2 border rounded mt-2" placeholder="اكتب إجابتك هنا...">
+            </div>
+          `;
+        });
+      });
+    }
+
+    // إرسال الإجابات إلى Firebase
+    function submitQuiz(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const answers = {};
+      formData.forEach((val, key) => answers[key] = val);
+
+      db.collection('results').add({
+        studentName: currentUser.displayName,
+        studentEmail: currentUser.email,
+        answers: answers,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("تم تسليم إجاباتك بنجاح للمالك!");
+      });
+    }
+
+    // عرض نتائج الطلاب في لوحة تحكم المالك
+    function loadAdminData() {
+      db.collection('results').onSnapshot(snapshot => {
+        const list = document.getElementById('student-results-list');
+        list.innerHTML = '';
+        if(snapshot.empty) {
+          list.innerHTML = '<p class="text-gray-500">لم يقم أي طالب بتقديم الاختبار بعد.</p>';
+          return;
+        }
+        snapshot.docs.forEach(doc => {
+          const res = doc.data();
+          let ansText = "";
+          for (let key in res.answers) {
+            ansText += `<li>${res.answers[key]}</li>`;
+          }
+          list.innerHTML += `
+            <div class="p-4 bg-white border rounded-lg shadow-sm">
+              <p class="font-bold text-blue-700">الطالب: ${res.studentName} (${res.studentEmail})</p>
+              <p class="text-xs text-gray-400 mb-2">تاريخ التسليم: ${res.submittedAt ? res.submittedAt.toDate().toLocaleString('ar-EG') : 'الآن'}</p>
+              <div class="text-sm bg-gray-50 p-2 rounded border">
+                <strong>الإجابات:</strong>
+                <ul class="list-disc mr-4">${ansText}</ul>
+              </div>
+            </div>
+          `;
+        });
+      });
+    }
+
+    // تفعيل الإشعارات في المتصفح
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('تم تفعيل صلاحيات الإشعارات.');
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
     <div id="unsubscribed-screen" class="hidden-section text-center py-8">
       <div class="bg-yellow-50 border border-yellow-200 p-6 rounded-xl max-w-md mx-auto">
         <h3 class="text-xl font-bold text-yellow-800 mb-2">الاشتراك الشهري للمنصة 🌟</h3>
