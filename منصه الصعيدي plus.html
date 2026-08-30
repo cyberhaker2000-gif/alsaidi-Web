@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة الصعيدي التعليمية</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs (CDN Version Compatible with Single File HTML) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b132b;
+            --card-bg: #1c2541;
+            --accent-gold: #d4af37;
+            --accent-gold-hover: #f39c12;
+            --text-light: #edf2f4;
+            --text-muted: #a0aab2;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-light); min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { 
+            background: linear-gradient(135deg, #0b132b, #1c2541); 
+            border-bottom: 2px solid var(--accent-gold); 
+            padding: 15px 5%; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .logo-container { display: flex; align-items: center; gap: 15px; }
+        .logo-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--accent-gold); object-fit: cover; }
+        .logo-text h1 { font-size: 1.4rem; color: var(--accent-gold); }
+        .user-nav { display: flex; align-items: center; gap: 15px; }
+        
+        .btn { 
+            padding: 8px 18px; 
+            border-radius: 8px; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.3s; 
+            text-decoration: none; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        .btn-gold { background-color: var(--accent-gold); color: #000; }
+        .btn-gold:hover { background-color: var(--accent-gold-hover); }
+        .btn-outline { border: 1px solid var(--accent-gold); color: var(--accent-gold); background: transparent; }
+        .btn-outline:hover { background: var(--accent-gold); color: #000; }
+        .btn-danger { background-color: var(--danger); color: #fff; }
+        
+        .hero { 
+            text-align: center; 
+            padding: 40px 20px; 
+            background: radial-gradient(circle, rgba(28,37,65,0.8) 0%, rgba(11,19,43,1) 100%); 
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2); 
+        }
+        .hero h2 { font-size: 2rem; color: var(--accent-gold); margin-bottom: 10px; }
+        .hero p { color: var(--text-muted); max-width: 700px; margin: 0 auto 20px auto; line-height: 1.6; }
+        
+        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; flex: 1; width: 100%; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--card-bg); padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; background: var(--card-bg); border: none; color: var(--text-light); border-radius: 6px; cursor: pointer; font-size: 1rem; }
+        .tab-btn.active { background: var(--accent-gold); color: #000; font-weight: bold; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background-color: var(--card-bg); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
+        .card h3 { color: var(--accent-gold); margin-bottom: 10px; font-size: 1.2rem; }
+        .video-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000; margin-bottom: 10px; }
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .img-preview { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--card-bg); border: 2px solid var(--accent-gold); border-radius: 12px; width: 100%; max-width: 500px; padding: 25px; position: relative; }
+        .close-modal { position: absolute; top: 15px; left: 15px; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--accent-gold); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #0b132b; color: #fff; }
+        
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: var(--card-bg); }
+        th, td { padding: 12px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        th { background-color: rgba(212, 175, 55, 0.1); color: var(--accent-gold); }
+        .empty-msg { text-align: center; padding: 40px; color: var(--text-muted); font-size: 1.1rem; }
+        .locked-banner { background: rgba(231, 76, 60, 0.1); border: 1px solid var(--danger); padding: 20px; border-radius: 8px; text-align: center; margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <img src="IMG-20260830-WA0015.jpg" alt="Logo" class="logo-img" onerror="this.src='https://via.placeholder.com/55/0b132b/d4af37?text=الصعيدي'">
+            <div class="logo-text">
+                <h1 id="site-title">منصة الصعيدي التعليمية</h1>
+            </div>
+        </div>
+        <div class="user-nav" id="nav-actions"></div>
+    </header>
+
+    <section class="hero">
+        <h2 id="hero-heading">أهلاً بك في منصة الصعيدي التعليمية</h2>
+        <p id="hero-desc">منصة متكاملة لكل طلاب البكالوريا - مراجعات، نماذج، اختبارات ومتابعة مستمرة تحت إشراف أ/ يوسف أحمد الصعيدي.</p>
+        <a id="sub-whatsapp-btn" href="https://wa.me/201005094619?text=أنا%20حابب%20أشترك%20في%20منصة%20الصعيدي" target="_blank" class="btn btn-gold">
+            <i class="fab fa-whatsapp"></i> اشترك الآن عبر الواتساب
+        </a>
+    </section>
+
+    <main class="container">
+        <!-- Student Dashboard -->
+        <div id="student-view" style="display: none;">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('videos')"><i class="fas fa-video"></i> الفيديوهات التعليمية</button>
+                <button class="tab-btn" onclick="switchTab('pdfs')"><i class="fas fa-file-pdf"></i> ملفات PDF</button>
+                <button class="tab-btn" onclick="switchTab('images')"><i class="fas fa-chalkboard"></i> صور السبورات</button>
+            </div>
+
+            <div id="tab-videos" class="tab-content"><div class="grid" id="videos-grid"></div></div>
+            <div id="tab-pdfs" class="tab-content" style="display: none;"><div class="grid" id="pdfs-grid"></div></div>
+            <div id="tab-images" class="tab-content" style="display: none;"><div class="grid" id="images-grid"></div></div>
+        </div>
+
+        <!-- Locked Screen -->
+        <div id="locked-view" class="locked-banner" style="display: none;">
+            <i class="fas fa-lock fa-3x" style="color: var(--danger); margin-bottom: 10px;"></i>
+            <h3>المحتوى المغلق!</h3>
+            <p>سجل الدخول وتأكد من تفعيل اشتراكك عبر الواتساب للوصول للمحتوى.</p>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-view" style="display: none; margin-top: 40px; border-top: 2px dashed var(--accent-gold); padding-top: 30px;">
+            <h2 style="color: var(--accent-gold); margin-bottom: 20px;"><i class="fas fa-user-shield"></i> لوحة تحكم المالك</h2>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button class="btn btn-gold" onclick="openModal('add-content-modal')"><i class="fas fa-plus"></i> إضافة محتوى جديد</button>
+                <button class="btn btn-outline" onclick="openModal('edit-site-modal')"><i class="fas fa-cog"></i> تعديل نصوص الموقع</button>
+            </div>
+
+            <h3 style="margin-top: 30px; color: var(--text-light);">إدارة المشتركين</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID المستخدم</th>
+                            <th>اسم المستخدم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>حالة الاشتراك</th>
+                            <th>الأيام المتبقية</th>
+                            <th>إجراءات الإدارة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subscribers-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Login / Register -->
+    <div class="modal" id="auth-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('auth-modal')">&times;</span>
+            <h3 style="color: var(--accent-gold); margin-bottom: 15px;" id="auth-title">تسجيل الدخول</h3>
+            <form id="auth-form" onsubmit="handleAuth(event)">
+                <div class="form-group" id="username-group" style="display: none;">
+                    <label>اسم المستخدم (Unique Username)</label>
+                    <input type="text" id="auth-username" placeholder="أدخل اسم مستخدم فريد">
+                </div>
+                <div class="form-group">
+                    <label>البريد الإلكتروني (Gmail)</label>
+                    <input type="email" id="auth-email" required placeholder="example@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>كلمة السر</label>
+                    <input type="password" id="auth-password" required placeholder="********">
+                </div>
+                <button type="submit" class="btn btn-gold" style="width: 100%; margin-top: 10px;" id="auth-submit-btn">ورود</button>
+            </form>
+            <p style="margin-top: 15px; font-size: 0.9rem; text-align: center;">
+                <span id="auth-toggle-text">ليس لديك حساب؟</span> 
+                <a href="#" style="color: var(--accent-gold);" onclick="toggleAuthMode(event)" id="auth-toggle-link">إنشاء حساب جديد</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal Add Content -->
+    <div class="modal" id="add-content-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('add-content-modal')">&times;</span>
+            <h3 style="color: var(--accent-gold); margin-bottom: 15px;">إضافة محتوى جديد</h3>
+            <form onsubmit="handleAddContent(event)">
+                <div class="form-group">
+                    <label>نوع المحتوى</label>
+                    <select id="content-type">
+                        <option value="videos">فيديو تعليمي</option>
+                        <option value="pdfs">ملف PDF</option>
+                        <option value="images">صورة سبورة</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>عنوان الدرس / الملف</label>
+                    <input type="text" id="content-title" required placeholder="مثال: الدرس الأول - كيمياء">
+                </div>
+                <div class="form-group">
+                    <label>الرابط</label>
+                    <input type="url" id="content-url" required placeholder="https://...">
+                </div>
+                <button type="submit" class="btn btn-gold" style="width: 100%;">نشر المحتوى السحابي</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Edit Site Texts -->
+    <div class="modal" id="edit-site-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('edit-site-modal')">&times;</span>
+            <h3 style="color: var(--accent-gold); margin-bottom: 15px;">تعديل نصوص الواجهة</h3>
+            <form onsubmit="handleEditSite(event)">
+                <div class="form-group">
+                    <label>عنوان المنصة الرئيسي</label>
+                    <input type="text" id="edit-site-title-input">
+                </div>
+                <div class="form-group">
+                    <label>عنوان الترحيب</label>
+                    <input type="text" id="edit-hero-heading-input">
+                </div>
+                <div class="form-group">
+                    <label>الوصف الترحيبي</label>
+                    <textarea id="edit-hero-desc-input" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-gold" style="width: 100%;">حفظ التغييرات</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // === بيانات الـ Firebase الجديدة والمحدثة بالكامل ===
+        const firebaseConfig = {
+          apiKey: "AIzaSyAzmsLzxEYawqypv24ugoY9eiaHfWdeavM",
+          authDomain: "alsaidi-platform.firebaseapp.com",
+          projectId: "alsaidi-platform",
+          storageBucket: "alsaidi-platform.firebasestorage.app",
+          messagingSenderId: "850470059128",
+          appId: "1:850470059128:web:265404980d44de5ac9018d",
+          measurementId: "G-12XVNBY1NS"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const OWNER_GMAIL = "youssef57255@gmail.com";
+        let currentUserProfile = null;
+        let isRegisterMode = false;
+
+        // Dynamic Auth State Listener
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    currentUserProfile = { uid: user.uid, ...userDoc.data() };
+                } else if (user.email.toLowerCase() === OWNER_GMAIL.toLowerCase()) {
+                    currentUserProfile = { uid: user.uid, id: 777777, username: "المالك أ/ يوسف", email: OWNER_GMAIL, subEndDate: '2099-12-31' };
+                }
+            } else {
+                currentUserProfile = null;
+            }
+            updateUI();
+        });
+
+        async function updateUI() {
+            // Load Site Settings
+            const settingsDoc = await db.collection('settings').doc('general').get();
+            if (settingsDoc.exists) {
+                const s = settingsDoc.data();
+                document.getElementById('site-title').innerText = s.title || "منصة الصعيدي التعليمية";
+                document.getElementById('hero-heading').innerText = s.heroHeading || "أهلاً بك في منصة الصعيدي التعليمية";
+                document.getElementById('hero-desc').innerText = s.heroDesc || "منصة متكاملة لكل طلاب البكالوريا...";
+            }
+
+            const navActions = document.getElementById('nav-actions');
+            const studentView = document.getElementById('student-view');
+            const lockedView = document.getElementById('locked-view');
+            const adminView = document.getElementById('admin-view');
+
+            if (currentUserProfile) {
+                let daysLeft = calculateDaysLeft(currentUserProfile.subEndDate);
+                let isSubscribed = daysLeft > 0;
+
+                navActions.innerHTML = `
+                    <span style="color: var(--accent-gold); font-size: 0.9rem;">
+                        <i class="fas fa-user"></i> ${currentUserProfile.username} (ID: ${currentUserProfile.id})
+                    </span>
+                    <button class="btn btn-outline" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+                `;
+
+                if (currentUserProfile.email.toLowerCase() === OWNER_GMAIL.toLowerCase()) {
+                    adminView.style.display = 'block';
+                    studentView.style.display = 'block';
+                    lockedView.style.display = 'none';
+                    loadAdminSubscribers();
+                } else if (isSubscribed) {
+                    adminView.style.display = 'none';
+                    studentView.style.display = 'block';
+                    lockedView.style.display = 'none';
+                } else {
+                    adminView.style.display = 'none';
+                    studentView.style.display = 'none';
+                    lockedView.style.display = 'block';
+                }
+            } else {
+                navActions.innerHTML = `
+                    <button class="btn btn-gold" onclick="openAuthModal(false)">تسجيل الدخول</button>
+                    <button class="btn btn-outline" onclick="openAuthModal(true)">حساب جديد</button>
+                `;
+                studentView.style.display = 'none';
+                adminView.style.display = 'none';
+                lockedView.style.display = 'block';
+            }
+
+            loadContent();
+        }
+
+        // Auth Logic
+        function openAuthModal(registerMode) {
+            isRegisterMode = registerMode;
+            document.getElementById('username-group').style.display = registerMode ? 'block' : 'none';
+            document.getElementById('auth-title').innerText = registerMode ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
+            document.getElementById('auth-submit-btn').innerText = registerMode ? 'تسجيل' : 'ورود';
+            openModal('auth-modal');
+        }
+
+        function toggleAuthMode(e) {
+            e.preventDefault();
+            openAuthModal(!isRegisterMode);
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const username = document.getElementById('auth-username').value.trim();
+
+            try {
+                if (isRegisterMode) {
+                    const usernameCheck = await db.collection('users').where('username', '==', username).get();
+                    if (!usernameCheck.empty) {
+                        alert('اسم المستخدم هذا مأخوذ بالفعل! اختر اسماً آخر.');
+                        return;
+                    }
+
+                    const res = await auth.createUserWithEmailAndPassword(email, password);
+                    const randomID = Math.floor(100000 + Math.random() * 900000);
+                    
+                    await db.collection('users').doc(res.user.uid).set({
+                        id: randomID,
+                        username: username,
+                        email: email,
+                        subEndDate: null
+                    });
+                } else {
+                    await auth.signInWithEmailAndPassword(email, password);
+                }
+                closeModal('auth-modal');
+            } catch (err) {
+                alert('خطأ في العملية: ' + err.message);
+            }
+        }
+
+        function logout() { auth.signOut(); }
+
+        // Load Content Realtime
+        function loadContent() {
+            ['videos', 'pdfs', 'images'].forEach(type => {
+                db.collection('content').doc(type).onSnapshot(doc => {
+                    const container = document.getElementById(`${type}-grid`);
+                    container.innerHTML = '';
+                    
+                    if (!doc.exists || !doc.data().items || doc.data().items.length === 0) {
+                        container.innerHTML = `<div class="empty-msg">لا يوجد محتوى متوفر حالياً في هذا القسم.</div>`;
+                        return;
+                    }
+
+                    doc.data().items.forEach((item, idx) => {
+                        let cardHTML = `<div class="card"><h3>${item.title}</h3>`;
+                        if (type === 'videos') {
+                            cardHTML += `<div class="video-wrapper"><iframe src="${getEmbedUrl(item.url)}" allowfullscreen></iframe></div>`;
+                        } else if (type === 'pdfs') {
+                            cardHTML += `<a href="${item.url}" target="_blank" class="btn btn-gold"><i class="fas fa-file-download"></i> فتح / تحميل ملف PDF</a>`;
+                        } else if (type === 'images') {
+                            cardHTML += `<img src="${item.url}" class="img-preview"><a href="${item.url}" target="_blank" class="btn btn-outline"><i class="fas fa-expand"></i> عرض الصورة</a>`;
+                        }
+
+                        if (currentUserProfile && currentUserProfile.email.toLowerCase() === OWNER_GMAIL.toLowerCase()) {
+                            cardHTML += `<button class="btn btn-danger" style="margin-top: 10px;" onclick="deleteContent('${type}', ${idx})"><i class="fas fa-trash"></i> حذف</button>`;
+                        }
+                        cardHTML += `</div>`;
+                        container.innerHTML += cardHTML;
+                    });
+                });
+            });
+        }
+
+        function getEmbedUrl(url) {
+            if (url.includes('youtube.com/watch?v=')) return url.replace('watch?v=', 'embed/');
+            if (url.includes('youtu.be/')) return url.replace('youtu.be/', 'youtube.com/embed/');
+            return url;
+        }
+
+        async function handleAddContent(e) {
+            e.preventDefault();
+            const type = document.getElementById('content-type').value;
+            const title = document.getElementById('content-title').value;
+            const url = document.getElementById('content-url').value;
+
+            const docRef = db.collection('content').doc(type);
+            const doc = await docRef.get();
+            let items = doc.exists ? doc.data().items || [] : [];
+            items.push({ title, url });
+
+            await docRef.set({ items });
+            closeModal('add-content-modal');
+        }
+
+        async function deleteContent(type, index) {
+            if (confirm('تأكيد حذف هذا العنصر؟')) {
+                const docRef = db.collection('content').doc(type);
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    let items = doc.data().items;
+                    items.splice(index, 1);
+                    await docRef.set({ items });
+                }
+            }
+        }
+
+        async function handleEditSite(e) {
+            e.preventDefault();
+            const title = document.getElementById('edit-site-title-input').value;
+            const heroHeading = document.getElementById('edit-hero-heading-input').value;
+            const heroDesc = document.getElementById('edit-hero-desc-input').value;
+
+            await db.collection('settings').doc('general').set({
+                title, heroHeading, heroDesc
+            });
+            closeModal('edit-site-modal');
+            updateUI();
+        }
+
+        // Admin Management
+        function loadAdminSubscribers() {
+            db.collection('users').onSnapshot(snapshot => {
+                const tbody = document.getElementById('subscribers-table-body');
+                tbody.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const u = doc.data();
+                    if (u.email.toLowerCase() === OWNER_GMAIL.toLowerCase()) return;
+                    
+                    let daysLeft = calculateDaysLeft(u.subEndDate);
+                    let isSubbed = daysLeft > 0;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${u.id}</td>
+                            <td>${u.username}</td>
+                            <td>${u.email}</td>
+                            <td><span style="color: ${isSubbed ? 'var(--success)' : 'var(--danger)'}">${isSubbed ? 'نشط' : 'منتهي'}</span></td>
+                            <td>${daysLeft} يوم</td>
+                            <td>
+                                <button class="btn btn-gold" style="padding: 4px 8px; font-size: 0.8rem;" onclick="modifySubDays('${doc.id}', 30)">+30 يوم</button>
+                                <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;" onclick="modifySubDays('${doc.id}', -7)">-7 أيام</button>
+                                <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.8rem;" onclick="revokeSub('${doc.id}')">إلغاء الاشتراك</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        async function modifySubDays(uid, days) {
+            const userRef = db.collection('users').doc(uid);
+            const doc = await userRef.get();
+            if (doc.exists) {
+                let currentEnd = doc.data().subEndDate ? new Date(doc.data().subEndDate) : new Date();
+                if (currentEnd < new Date()) currentEnd = new Date();
+                currentEnd.setDate(currentEnd.getDate() + days);
+                await userRef.update({ subEndDate: currentEnd.toISOString().split('T')[0] });
+            }
+        }
+
+        async function revokeSub(uid) {
+            await db.collection('users').doc(uid).update({ subEndDate: null });
+        }
+
+        function calculateDaysLeft(endDateStr) {
+            if (!endDateStr) return 0;
+            const end = new Date(endDateStr);
+            const diffTime = end - new Date();
+            return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+        }
+
+        function openModal(id) { 
+            if(id === 'edit-site-modal') {
+                document.getElementById('edit-site-title-input').value = document.getElementById('site-title').innerText;
+                document.getElementById('edit-hero-heading-input').value = document.getElementById('hero-heading').innerText;
+                document.getElementById('edit-hero-desc-input').value = document.getElementById('hero-desc').innerText;
+            }
+            document.getElementById(id).classList.add('active'); 
+        }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    </script>
+</body>
+</html>
