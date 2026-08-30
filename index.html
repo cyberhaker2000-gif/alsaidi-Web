@@ -153,7 +153,7 @@
       padding: 10px; margin-bottom: 8px; border-radius: 6px; font-size: 13px;
     }
 
-    /* منطقة السحب والإفلات الجديدة */
+    /* منطقة السحب والإفلات */
     .drop-zone {
       border: 2px dashed var(--accent-yellow);
       border-radius: 12px;
@@ -272,10 +272,10 @@
         <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
       </div>
 
-      <input type="url" id="lessonUrl" class="input-field" placeholder="أو اكتب رابط الملف/الفيديو مباشرة هنا...">
+      <input type="url" id="lessonUrl" class="input-field" placeholder="أو اكتب رابط الملف/الفيديو (أو يوتيوب) مباشرة هنا...">
       
       <select id="lessonType" class="input-field">
-        <option value="video">فيديو (مخفي الرابط)</option>
+        <option value="video">فيديو (مخفي الرابط / يدعم يوتيوب)</option>
         <option value="image">صورة</option>
         <option value="file">ملف PDF / مستند</option>
       </select>
@@ -379,7 +379,6 @@
       const reader = new FileReader();
       const lessonTypeSelect = document.getElementById('lessonType');
       
-      // تحديد نوع الملف تلقائياً
       if (file.type.startsWith('video/')) {
         lessonTypeSelect.value = 'video';
       } else if (file.type.startsWith('image/')) {
@@ -607,6 +606,21 @@
       alert('تم نشر الدرس بنجاح! 🚀');
     }
 
+    // دالة مساعدة لتحويل رابط يوتيوب العادي إلى رابط Embed للتضمين
+    function getEmbedYouTubeUrl(url) {
+      let videoId = '';
+      if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1].split('?')[0];
+      } else if (url.includes('youtube.com/watch')) {
+        const urlParams = new URLSearchParams(new URL(url).search);
+        videoId = urlParams.get('v');
+      }
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+      return url;
+    }
+
     function renderLessons() {
       const area = document.getElementById('lessonsArea');
       area.innerHTML = '';
@@ -627,7 +641,12 @@
       filtered.forEach((l, index) => {
         let content = `<h4>📌 ${l.title}</h4>`;
         if (l.type === 'video') {
-          content += `<video controls style="width:100%; max-height:350px; border-radius:8px;"><source src="${l.url}"></video>`;
+          if (l.url.includes('youtube.com') || l.url.includes('youtu.be')) {
+            const embedUrl = getEmbedYouTubeUrl(l.url);
+            content += `<div style="position:relative; width:100%; height:315px;"><iframe src="${embedUrl}" style="width:100%; height:100%; border:0; border-radius:8px;" allowfullscreen></iframe></div>`;
+          } else {
+            content += `<video controls style="width:100%; max-height:350px; border-radius:8px;"><source src="${l.url}"></video>`;
+          }
         } else if (l.type === 'image') {
           content += `<img src="${l.url}" style="max-width:100%; border-radius:8px;">`;
         } else {
