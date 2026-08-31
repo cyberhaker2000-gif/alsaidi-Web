@@ -272,10 +272,10 @@
         <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
       </div>
 
-      <input type="url" id="lessonUrl" class="input-field" placeholder="أو اكتب رابط الملف/الفيديو (أو يوتيوب) مباشرة هنا...">
+      <input type="url" id="lessonUrl" class="input-field" placeholder="أو اكتب رابط الملف/الفيديو (أو يوتيوب أو تيليجرام) مباشرة هنا...">
       
       <select id="lessonType" class="input-field">
-        <option value="video">فيديو (مخفي الرابط / يدعم يوتيوب)</option>
+        <option value="video">فيديو (يوتيوب / تيليجرام / روابط مباشرة)</option>
         <option value="image">صورة</option>
         <option value="file">ملف PDF / مستند</option>
       </select>
@@ -445,7 +445,7 @@
         return;
       }
 
-    const newStudent = {
+      const newStudent = {
         username: username,
         pass: pass,
         phone: phone,
@@ -606,7 +606,7 @@
       alert('تم نشر الدرس بنجاح! 🚀');
     }
 
-    // دالة محسنة ومصححة 100% لاستخراج روابط يوتيوب بكل أنواعها
+    // دالة معالجة روابط يوتيوب
     function getEmbedYouTubeUrl(url) {
       let videoId = '';
       try {
@@ -648,7 +648,8 @@
             const embedUrl = getEmbedYouTubeUrl(l.url);
             content += `<div style="position:relative; width:100%; height:315px;"><iframe src="${embedUrl}" style="width:100%; height:100%; border:0; border-radius:8px;" allowfullscreen></iframe></div>`;
           } else {
-            content += `<video controls style="width:100%; max-height:350px; border-radius:8px;"><source src="${l.url}"></video>`;
+            // معالجة آمنة لروابط تيليجرام أو الروابط الخارجية عبر Iframe لتفادي أخطاء المشغل العادي
+            content += `<div style="position:relative; width:100%; height:350px;"><iframe src="${l.url}" style="width:100%; height:100%; border:0; border-radius:8px;" allowfullscreen></iframe></div>`;
           }
         } else if (l.type === 'image') {
           content += `<img src="${l.url}" style="max-width:100%; border-radius:8px;">`;
